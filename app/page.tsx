@@ -25,6 +25,7 @@ interface ResearchResult {
   totalDurationMs: number
   modelCount: number
   successCount: number
+  timestamp?: string
 }
 
 type Stage = 'input' | 'clarifying' | 'research' | 'results'
@@ -54,10 +55,9 @@ export default function Home() {
   const [images, setImages] = useState<File[]>([])
   const [imagePreviews, setImagePreviews] = useState<string[]>([])
   const [isLoading, setIsLoading] = useState(false)
-  const [result, setResult] = useState<ResearchResult | null>(null)
   const [error, setError] = useState<string | null>(null)
-  const [showIndividual, setShowIndividual] = useState(false)
   const [showModelSelector, setShowModelSelector] = useState(false)
+  const [showFollowUpModels, setShowFollowUpModels] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
   
   const [selectedModels, setSelectedModels] = useState<string[]>(DEFAULT_QUICK)
@@ -70,6 +70,7 @@ export default function Home() {
   
   const [followUpQuery, setFollowUpQuery] = useState('')
   const [conversationHistory, setConversationHistory] = useState<ResearchResult[]>([])
+  const [expandedRounds, setExpandedRounds] = useState<Set<number>>(new Set())
 
   useEffect(() => {
     if (!showModelSelector) {
@@ -161,8 +162,13 @@ export default function Home() {
       if (!response.ok) throw new Error((await response.json()).error || 'Research failed')
 
       const data = await response.json()
-      setResult(data)
-      setConversationHistory(prev => [...prev, data])
+      // Add timestamp to result
+      const resultWithTimestamp = {
+        ...data,
+        query: finalQuery, // Store original query, not enhanced
+        timestamp: new Date().toISOString()
+      }
+      setConversationHistory(prev => [...prev, resultWithTimestamp])
       setStage('results')
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Something went wrong')
@@ -200,11 +206,11 @@ export default function Home() {
   }
 
   const downloadZip = async () => {
-    if (!result) return
+    if (conversationHistory.length === 0) return
     const response = await fetch('/api/download', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ history: [...conversationHistory, result] }),
+      body: JSON.stringify({ history: conversationHistory }),
     })
     if (response.ok) {
       const blob = await response.blob()
@@ -222,7 +228,6 @@ export default function Home() {
     setImages([])
     imagePreviews.forEach(url => URL.revokeObjectURL(url))
     setImagePreviews([])
-    setResult(null)
     setError(null)
     setStage('input')
     setClarifyingQuestions([])
@@ -230,7 +235,44 @@ export default function Home() {
     setOriginalQuery('')
     setFollowUpQuery('')
     setConversationHistory([])
+    setExpandedRounds(new Set())
   }
+
+  const toggleRound = (roundIdx: number) => {
+    setExpandedRounds(prev => {
+      const next = new Set(prev)
+      if (next.has(roundIdx)) next.delete(roundIdx)
+      else next.add(roundIdx)
+      return next
+    })
+  }
+
+  const ModelSelector = ({ showState, setShowState }: { showState: boolean, setShowState: (v: boolean) => void }) => (
+    <div>
+      <button type="button" onClick={() => setShowState(!showState)}
+        className="text-xs text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200">
+        {showState ? '▼' : '▶'} Models ({selectedModels.length}/5)
+      </button>
+      
+      {showState && (
+        <div className="mt-2 grid grid-cols-2 sm:grid-cols-3 gap-1">
+          {MODEL_OPTIONS.map(model => (
+            <label key={model.id} className={`flex items-center gap-1.5 p-1.5 rounded text-xs cursor-pointer
+              ${selectedModels.includes(model.id) 
+                ? 'bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300' 
+                : 'hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300'}`}>
+              <input type="checkbox" checked={selectedModels.includes(model.id)}
+                onChange={() => toggleModel(model.id)}
+                disabled={!selectedModels.includes(model.id) && selectedModels.length >= 5}
+                className="rounded text-blue-600 w-3 h-3" />
+              <span className="truncate">{model.name}</span>
+              <span className="text-slate-400 dark:text-slate-500">{'$'.repeat(model.cost) || '∅'}</span>
+            </label>
+          ))}
+        </div>
+      )}
+    </div>
+  )
 
   return (
     <main className="min-h-screen bg-gradient-to-b from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800">
@@ -247,7 +289,7 @@ export default function Home() {
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
                 placeholder="What would you like to research?"
-                className="w-full p-4 text-base sm:text-lg resize-none border-0 focus:ring-0 focus:outline-none placeholder:text-slate-400 dark:placeholder:text-slate-500 min-h-[100px] bg-transparent dark:text-slate-100"
+                className="w-full p-4 text-base sm:text-lg resize-none border-0 focus:ring-0 focus:outline-none placeholder:text-slate-400 dark:placeholder:text-slate-500 min-h-[120px] bg-transparent dark:text-slate-100"
                 disabled={isLoading}
               />
 
@@ -287,30 +329,7 @@ export default function Home() {
                   </button>
                 </div>
 
-                <div>
-                  <button type="button" onClick={() => setShowModelSelector(!showModelSelector)}
-                    className="text-xs text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200">
-                    {showModelSelector ? '▼' : '▶'} Models ({selectedModels.length}/5)
-                  </button>
-                  
-                  {showModelSelector && (
-                    <div className="mt-2 grid grid-cols-2 sm:grid-cols-3 gap-1">
-                      {MODEL_OPTIONS.map(model => (
-                        <label key={model.id} className={`flex items-center gap-1.5 p-1.5 rounded text-xs cursor-pointer
-                          ${selectedModels.includes(model.id) 
-                            ? 'bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300' 
-                            : 'hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300'}`}>
-                          <input type="checkbox" checked={selectedModels.includes(model.id)}
-                            onChange={() => toggleModel(model.id)}
-                            disabled={!selectedModels.includes(model.id) && selectedModels.length >= 5}
-                            className="rounded text-blue-600 w-3 h-3" />
-                          <span className="truncate">{model.name}</span>
-                          <span className="text-slate-400 dark:text-slate-500">{'$'.repeat(model.cost) || '∅'}</span>
-                        </label>
-                      ))}
-                    </div>
-                  )}
-                </div>
+                <ModelSelector showState={showModelSelector} setShowState={setShowModelSelector} />
               </div>
             </div>
           </form>
@@ -360,56 +379,78 @@ export default function Home() {
           </div>
         )}
 
-        {stage === 'results' && result && (
+        {stage === 'results' && conversationHistory.length > 0 && (
           <div className="space-y-4">
-            <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden">
-              <div className="p-3 bg-slate-50 dark:bg-slate-900 border-b border-slate-100 dark:border-slate-700 flex justify-between items-center">
-                <h2 className="font-semibold text-slate-800 dark:text-slate-100 text-sm sm:text-base">✨ Synthesis</h2>
-                <div className="flex items-center gap-2">
-                  <span className="text-xs text-slate-500 dark:text-slate-400">
-                    {result.successCount}/{result.modelCount} • {(result.totalDurationMs / 1000).toFixed(0)}s
+            {/* Conversation Thread */}
+            {conversationHistory.map((result, roundIdx) => (
+              <div key={roundIdx} className="space-y-3">
+                {/* Query label */}
+                <div className="flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400">
+                  <span className="font-medium">
+                    {roundIdx === 0 ? '🔍 Initial Query' : `💬 Follow-up ${roundIdx}`}
                   </span>
-                  <button onClick={downloadZip} className="text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 text-xs font-medium">
-                    📥 Download
-                  </button>
+                  {result.timestamp && (
+                    <span>• {new Date(result.timestamp).toLocaleTimeString()}</span>
+                  )}
                 </div>
-              </div>
-              <div className="p-4 prose prose-sm prose-slate dark:prose-invert max-w-none">
-                <div dangerouslySetInnerHTML={{ __html: formatMarkdown(result.synthesis) }} />
-              </div>
-            </div>
+                
+                {/* Query text */}
+                <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg px-4 py-2 text-sm text-blue-800 dark:text-blue-200">
+                  {result.query}
+                </div>
 
-            <button onClick={() => setShowIndividual(!showIndividual)}
-              className="w-full text-center text-xs text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 py-2">
-              {showIndividual ? '▼ Hide' : '▶ Show'} individual responses
-            </button>
-
-            {showIndividual && (
-              <div className="space-y-3">
-                {result.responses.map((r, i) => (
-                  <div key={i} className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden">
-                    <div className="p-2 bg-slate-50 dark:bg-slate-900 border-b border-slate-100 dark:border-slate-700 flex justify-between items-center">
-                      <span className="font-medium text-slate-700 dark:text-slate-200 text-sm">{r.model}</span>
-                      <span className={`text-xs ${r.success ? 'text-green-600 dark:text-green-400' : 'text-red-500 dark:text-red-400'}`}>
-                        {r.success ? `✓ ${((r.durationMs || 0) / 1000).toFixed(1)}s` : '✗'}
-                      </span>
-                    </div>
-                    <div className="p-3 text-sm text-slate-600 dark:text-slate-300 max-h-48 overflow-y-auto prose prose-sm dark:prose-invert">
-                      {r.success ? (
-                        <div dangerouslySetInnerHTML={{ __html: formatMarkdown(r.content) }} />
-                      ) : <p className="text-red-500 dark:text-red-400">{r.error}</p>}
-                    </div>
+                {/* Synthesis */}
+                <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden">
+                  <div className="p-3 bg-slate-50 dark:bg-slate-900 border-b border-slate-100 dark:border-slate-700 flex justify-between items-center">
+                    <h2 className="font-semibold text-slate-800 dark:text-slate-100 text-sm sm:text-base">✨ Synthesis</h2>
+                    <span className="text-xs text-slate-500 dark:text-slate-400">
+                      {result.successCount}/{result.modelCount} • {(result.totalDurationMs / 1000).toFixed(0)}s
+                    </span>
                   </div>
-                ))}
-              </div>
-            )}
+                  <div className="p-4 prose prose-sm prose-slate dark:prose-invert max-w-none">
+                    <div dangerouslySetInnerHTML={{ __html: formatMarkdown(result.synthesis) }} />
+                  </div>
+                </div>
 
+                {/* Individual responses toggle */}
+                <button onClick={() => toggleRound(roundIdx)}
+                  className="w-full text-center text-xs text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 py-1">
+                  {expandedRounds.has(roundIdx) ? '▼ Hide' : '▶ Show'} individual responses
+                </button>
+
+                {expandedRounds.has(roundIdx) && (
+                  <div className="space-y-2">
+                    {result.responses.map((r, i) => (
+                      <div key={i} className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden">
+                        <div className="p-2 bg-slate-50 dark:bg-slate-900 border-b border-slate-100 dark:border-slate-700 flex justify-between items-center">
+                          <span className="font-medium text-slate-700 dark:text-slate-200 text-sm">{r.model}</span>
+                          <span className={`text-xs ${r.success ? 'text-green-600 dark:text-green-400' : 'text-red-500 dark:text-red-400'}`}>
+                            {r.success ? `✓ ${((r.durationMs || 0) / 1000).toFixed(1)}s` : '✗'}
+                          </span>
+                        </div>
+                        <div className="p-3 text-sm text-slate-600 dark:text-slate-300 max-h-48 overflow-y-auto prose prose-sm dark:prose-invert">
+                          {r.success ? (
+                            <div dangerouslySetInnerHTML={{ __html: formatMarkdown(r.content) }} />
+                          ) : <p className="text-red-500 dark:text-red-400">{r.error}</p>}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            ))}
+
+            {/* Follow-up Form */}
             <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden">
-              <form onSubmit={handleFollowUp} className="p-3">
-                <input type="text" value={followUpQuery} onChange={(e) => setFollowUpQuery(e.target.value)}
+              <form onSubmit={handleFollowUp} className="p-3 space-y-3">
+                <textarea 
+                  value={followUpQuery} 
+                  onChange={(e) => setFollowUpQuery(e.target.value)}
                   placeholder="Ask a follow-up question..."
-                  className="w-full px-3 py-2 border border-slate-200 dark:border-slate-600 rounded-lg text-sm mb-2 bg-white dark:bg-slate-900 dark:text-slate-100" 
-                  disabled={isLoading} />
+                  className="w-full px-3 py-2 border border-slate-200 dark:border-slate-600 rounded-lg text-sm bg-white dark:bg-slate-900 dark:text-slate-100 min-h-[80px] resize-none" 
+                  disabled={isLoading} 
+                />
+                <ModelSelector showState={showFollowUpModels} setShowState={setShowFollowUpModels} />
                 <div className="flex justify-between items-center">
                   <span className="text-xs text-slate-400 dark:text-slate-500">Context from previous research included</span>
                   <button type="submit" disabled={isLoading || !followUpQuery.trim()}
@@ -420,8 +461,12 @@ export default function Home() {
               </form>
             </div>
 
-            <div className="text-center">
-              <button onClick={clearAll} className="text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 text-sm">
+            {/* Actions */}
+            <div className="flex justify-center gap-4">
+              <button onClick={downloadZip} className="text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 text-sm">
+                📥 Download All ({conversationHistory.length} rounds)
+              </button>
+              <button onClick={clearAll} className="text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 text-sm">
                 ← New research
               </button>
             </div>

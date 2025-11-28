@@ -18,14 +18,13 @@ interface ResearchResult {
   totalDurationMs: number
   modelCount: number
   successCount: number
+  timestamp?: string
 }
 
 interface DownloadRequest {
-  history: ResearchResult[]  // Full conversation history
-  currentResult?: ResearchResult  // For backwards compatibility
+  history: ResearchResult[]
 }
 
-// Create a smart, readable title from the research query
 function createSmartTitle(query: string): string {
   let cleaned = query
     .replace(/^(I need to|I want to|How do I|What are|Can you|Please|Help me|Tell me about)\s*/i, '')
@@ -49,12 +48,10 @@ export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
     
-    // Handle both old format (single result) and new format (history array)
     let history: ResearchResult[]
     if (body.history && Array.isArray(body.history)) {
       history = body.history
     } else if (body.query) {
-      // Old format - single result
       history = [body as ResearchResult]
     } else {
       throw new Error('Invalid request format')
@@ -67,10 +64,10 @@ export async function POST(request: NextRequest) {
     const zip = new JSZip()
     const now = new Date()
     const dateStr = now.toISOString().slice(0, 10)
+    const timeStr = now.toTimeString().slice(0, 5).replace(':', '')
     const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
     const dayName = dayNames[now.getDay()]
     
-    // Use first query for folder name
     const title = createSmartTitle(history[0].query)
     const folderName = `${dateStr} ${dayName} - ${title}`
     
@@ -79,11 +76,12 @@ export async function POST(request: NextRequest) {
     const allResponses = history.flatMap(r => r.responses.filter(resp => resp.success))
     const allModels = [...new Set(allResponses.map(r => r.model))]
     
-    // Build combined summary with all queries and syntheses
+    // Build combined summary
     let summaryContent = `---
 tags:
   - ai-research
 date: ${dateStr}
+time: "${now.toTimeString().slice(0, 8)}"
 queries: ${history.length}
 models: [${allModels.map(m => `"${m}"`).join(', ')}]
 duration: ${(totalDuration / 1000).toFixed(1)}s
@@ -94,13 +92,13 @@ status: completed
 
 `
     
-    // Add each research round
     history.forEach((result, roundIdx) => {
       const roundNum = roundIdx + 1
       const isFollowUp = roundIdx > 0
+      const timestamp = result.timestamp ? new Date(result.timestamp).toLocaleTimeString() : ''
       
       summaryContent += `## ${isFollowUp ? `Follow-up ${roundIdx}` : 'Initial Query'}: ${result.query.slice(0, 100)}
-
+${timestamp ? `*${timestamp}*\n` : ''}
 ### Synthesis
 
 ${result.synthesis}
@@ -121,10 +119,11 @@ ${result.responses.filter(r => r.success).map((r, i) => {
     
     zip.file(`${folderName}/00-summary.md`, summaryContent)
     
-    // Individual model files for each round
-    let globalFileIndex = 1
+    // Individual model files with synthesis included
     history.forEach((result, roundIdx) => {
       const roundNum = roundIdx + 1
+      const isFollowUp = roundIdx > 0
+      const timestamp = result.timestamp || now.toISOString()
       
       result.responses.forEach((response, i) => {
         if (!response.success) return
@@ -138,16 +137,21 @@ model: ${response.model}
 round: ${roundNum}
 query: "${result.query.slice(0, 100).replace(/"/g, '\\"')}"
 duration: ${((response.durationMs || 0) / 1000).toFixed(1)}s
-date: ${dateStr}
+timestamp: "${timestamp}"
 ---
 
 # ${response.model}
-## ${roundIdx === 0 ? 'Initial Query' : `Follow-up ${roundIdx}`}: ${result.query.slice(0, 80)}
+## ${isFollowUp ? `Follow-up ${roundIdx}` : 'Initial Query'}: ${result.query.slice(0, 80)}
 
-${response.content}`
+${response.content}
+
+---
+
+## Session Synthesis (Round ${roundNum})
+
+${result.synthesis}`
         
         zip.file(`${folderName}/${filename}`, content)
-        globalFileIndex++
       })
     })
     
