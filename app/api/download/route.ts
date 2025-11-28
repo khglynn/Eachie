@@ -20,22 +20,27 @@ interface ResearchResult {
   successCount: number
 }
 
-// Create a better title from query
-function createTitle(query: string): string {
-  // Remove special chars, take first 50 chars
-  const cleaned = query
-    .replace(/[^a-zA-Z0-9\s]/g, '')
+// Create a smart, readable title from the research query
+function createSmartTitle(query: string): string {
+  // Remove common question starters
+  let cleaned = query
+    .replace(/^(I need to|I want to|How do I|What are|Can you|Please|Help me|Tell me about)\s*/i, '')
+    .replace(/[^a-zA-Z0-9\s]/g, ' ')
     .trim()
-    .slice(0, 50)
-    .trim()
+  
+  // Take first 50 chars, but try to break at word boundary
+  if (cleaned.length > 50) {
+    cleaned = cleaned.slice(0, 50)
+    const lastSpace = cleaned.lastIndexOf(' ')
+    if (lastSpace > 30) cleaned = cleaned.slice(0, lastSpace)
+  }
   
   // Capitalize each word
-  const capitalized = cleaned
+  return cleaned
     .split(/\s+/)
+    .filter(w => w.length > 0)
     .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
-    .join(' ')
-  
-  return capitalized || 'Research'
+    .join(' ') || 'Research'
 }
 
 export async function POST(request: NextRequest) {
@@ -48,7 +53,7 @@ export async function POST(request: NextRequest) {
     const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
     const dayName = dayNames[now.getDay()]
     
-    const title = createTitle(result.query)
+    const title = createSmartTitle(result.query)
     const folderName = `${dateStr} ${dayName} - ${title}`
     
     // Summary with frontmatter
