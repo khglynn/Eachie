@@ -1,19 +1,20 @@
 # AI Research Agent
 
-Multi-model AI research tool that queries several LLMs in parallel with web search, synthesizes responses, and provides downloadable results.
-
-## Features
-
-- **Multi-model parallel queries** - Query 3-7 AI models simultaneously
-- **Built-in web search** - All models have internet access via OpenRouter's `:online` suffix
-- **Model selection** - Choose which models to include (up to 5)
-- **Quick & Deep modes** - Fast answers or thorough research
-- **Follow-up research** - Continue conversations with context compaction
-- **Download results** - Export as Obsidian-formatted zip
+Multi-model AI research tool with web search, model selection, and downloadable results.
 
 ## Live URL
 
 https://reachbot.vercel.app
+
+## Features
+
+- **Model Selection** - Choose up to 5 from 13 AI models
+- **Web Search** - All models have internet access via `:online` suffix
+- **Quick & Deep Modes** - 3-7 models depending on depth needed
+- **Follow-up Research** - Continue conversations with auto-compacted context
+- **Mobile-Friendly** - Responsive design, works great on phones
+- **Dark Mode** - Automatic via system preferences
+- **Download Results** - Export as Obsidian-formatted zip
 
 ## Local Development
 
@@ -22,33 +23,41 @@ npm install
 npm run dev
 ```
 
+Visit http://localhost:3000
+
 ## Environment Variables
 
-```
+```env
 OPENROUTER_API_KEY=sk-or-v1-...
 ```
 
+Get your API key from https://openrouter.ai
+
 ## Deploy
 
-Push to main branch - Vercel auto-deploys.
+Push to `main` branch - Vercel auto-deploys.
 
-## Models Available
+## Architecture
 
-### Flagships
-- Claude Sonnet 4, Claude Opus 4.5
-- GPT-5.1, GPT-5.1-Codex
-- Gemini 3 Pro
+- **Next.js 15** with App Router
+- **OpenRouter** for unified model access (400+ models)
+- **Vercel AI SDK** for streaming and structured outputs
+- **TailwindCSS** with dark mode support
 
-### Fast & Economical  
-- Claude Haiku 4.5
-- Gemini 2.5 Flash
-- Llama 4 Maverick
+## Model Categories
 
-### Reasoning Specialists
-- DeepSeek R1
-- Kimi K2 Thinking
-- Perplexity Deep Research
+| Category | Models | Use Case |
+|----------|--------|----------|
+| 🏆 **Flagship** | Claude Sonnet/Opus, GPT-5.1, Gemini 3 Pro | Best all-around, thorough analysis |
+| ⚡ **Fast** | Claude Haiku, Gemini Flash, Llama 4 | Quick answers, daily use |
+| 🧠 **Reasoning** | DeepSeek R1, Kimi K2, Perplexity Deep | Complex problem-solving |
+| 🎯 **Grounding** | GPT-5.1 Codex, Grok 4.1 | Precise instruction-following |
+| 🔍 **Search** | Perplexity Sonar Pro | Native web search with citations |
 
-### Grounding/Instruction-Following
-- GPT-5.1-Codex (optimized for steerability)
-- Grok 4.1
+## Cost
+
+~$0.16 for quick research (3 models), ~$2.14 for deep (7 models) including web search.
+
+## License
+
+MIT
