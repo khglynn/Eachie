@@ -2,14 +2,13 @@ import { NextRequest, NextResponse } from 'next/server'
 import { slack, verifySlackRequest } from '@/lib/slack'
 import { runResearch, runFollowUp, ResearchImage, RESEARCH_MODELS } from '@/lib/research'
 
-export const maxDuration = 60 // Allow longer execution for research
+export const maxDuration = 60
 
 export async function POST(request: NextRequest) {
   const body = await request.text()
   const signature = request.headers.get('x-slack-signature')
   const timestamp = request.headers.get('x-slack-request-timestamp')
 
-  // Verify request (skip in dev for URL verification)
   if (process.env.NODE_ENV === 'production') {
     if (!verifySlackRequest(signature, timestamp, body)) {
       return NextResponse.json({ error: 'Invalid signature' }, { status: 401 })
@@ -18,28 +17,22 @@ export async function POST(request: NextRequest) {
 
   const payload = JSON.parse(body)
 
-  // Handle URL verification challenge
   if (payload.type === 'url_verification') {
     return NextResponse.json({ challenge: payload.challenge })
   }
 
-  // Handle events
   if (payload.type === 'event_callback') {
     const event = payload.event
 
-    // Ignore bot messages
     if (event.bot_id) {
       return NextResponse.json({ ok: true })
     }
 
-    // Handle app mentions
     if (event.type === 'app_mention') {
-      // Process async to respond quickly to Slack
       processAppMention(event).catch(console.error)
       return NextResponse.json({ ok: true })
     }
 
-    // Handle thread replies (follow-ups)
     if (event.type === 'message' && event.thread_ts && !event.bot_id) {
       processFollowUp(event).catch(console.error)
       return NextResponse.json({ ok: true })
@@ -51,7 +44,6 @@ export async function POST(request: NextRequest) {
 
 async function downloadSlackImage(file: any): Promise<ResearchImage | null> {
   try {
-    // Get the private download URL and fetch with auth
     const response = await fetch(file.url_private_download || file.url_private, {
       headers: {
         'Authorization': `Bearer ${process.env.SLACK_BOT_TOKEN}`
@@ -66,7 +58,6 @@ async function downloadSlackImage(file: any): Promise<ResearchImage | null> {
     const buffer = await response.arrayBuffer()
     const base64 = Buffer.from(buffer).toString('base64')
     
-    // Map Slack mimetype to our format
     let mimeType: ResearchImage['mimeType'] = 'image/jpeg'
     if (file.mimetype === 'image/png') mimeType = 'image/png'
     else if (file.mimetype === 'image/gif') mimeType = 'image/gif'
@@ -93,7 +84,6 @@ async function processAppMention(event: any) {
     return
   }
 
-  // Check for images
   const images: ResearchImage[] = []
   if (event.files && event.files.length > 0) {
     const imageFiles = event.files.filter((f: any) => 
@@ -101,7 +91,7 @@ async function processAppMention(event: any) {
       ['image/jpeg', 'image/png', 'image/gif', 'image/webp'].includes(f.mimetype)
     )
     
-    for (const file of imageFiles.slice(0, 4)) { // Limit to 4 images
+    for (const file of imageFiles.slice(0, 4)) {
       const img = await downloadSlackImage(file)
       if (img) images.push(img)
     }
@@ -110,7 +100,6 @@ async function processAppMention(event: any) {
   const hasImages = images.length > 0
   const queryText = text || (hasImages ? 'What is in this image? Describe and analyze it.' : '')
 
-  // Acknowledge
   await slack.chat.postMessage({
     channel,
     thread_ts: threadTs,
@@ -124,6 +113,17 @@ async function processAppMention(event: any) {
     })
 
     const duration = (result.totalDurationMs / 1000).toFixed(1)
+    const modelsUsed = result.responses.filter(r => r.success).map(r => r.model).join(', ')
+    
+    // Build context elements without spread to avoid TS error
+    const contextElements: Array<{ type: 'mrkdwn'; text: string }> = [
+      { type: 'mrkdwn', text: `*Models:* ${modelsUsed}` },
+      { type: 'mrkdwn', text: `*Time:* ${duration}s` }
+    ]
+    
+    if (hasImages) {
+      contextElements.push({ type: 'mrkdwn', text: `*Images:* ${images.length}` })
+    }
 
     await slack.chat.postMessage({
       channel,
@@ -133,11 +133,7 @@ async function processAppMention(event: any) {
         { type: 'header', text: { type: 'plain_text', text: '🔬 Research Complete', emoji: true } },
         { type: 'section', text: { type: 'mrkdwn', text: result.synthesis.substring(0, 2900) } },
         { type: 'divider' },
-        { type: 'context', elements: [
-          { type: 'mrkdwn', text: `*Models:* ${result.responses.filter(r => r.success).map(r => r.model).join(', ')}` },
-          { type: 'mrkdwn', text: `*Time:* ${duration}s` },
-          ...(hasImages ? [{ type: 'mrkdwn', text: `*Images:* ${images.length}` }] : [])
-        ]}
+        { type: 'context', elements: contextElements }
       ]
     })
   } catch (error) {
