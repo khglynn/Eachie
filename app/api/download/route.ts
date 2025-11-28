@@ -30,7 +30,6 @@ export async function POST(request: NextRequest) {
     const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
     const dayName = dayNames[now.getDay()]
     
-    // Clean query for folder name
     const cleanQuery = result.query
       .slice(0, 50)
       .replace(/[^a-zA-Z0-9\s]/g, '')
@@ -39,7 +38,7 @@ export async function POST(request: NextRequest) {
     
     const folderName = `${dateStr} ${dayName} ${cleanQuery}`
     
-    // Create summary file with frontmatter
+    // Summary with frontmatter
     const summaryContent = `---
 tags:
   - ai-research
@@ -61,12 +60,11 @@ ${result.synthesis}
 ${result.responses.filter(r => r.success).map((r, i) => `- [[${String(i + 1).padStart(2, '0')}-${r.model.toLowerCase().replace(/\s+/g, '-')}|${r.model}]]`).join('\n')}
 
 ---
-*Generated ${now.toLocaleString()}*
-`
+*Generated ${now.toLocaleString()}*`
 
     zip.file(`${folderName}/00-summary.md`, summaryContent)
     
-    // Create individual model files
+    // Individual model files
     result.responses.forEach((response, i) => {
       if (!response.success) return
       
@@ -81,15 +79,15 @@ date: ${dateStr}
 
 # ${response.model}
 
-${response.content}
-`
+${response.content}`
       
       zip.file(`${folderName}/${filename}`, content)
     })
     
-    const zipBuffer = await zip.generateAsync({ type: 'nodebuffer' })
+    // Generate as Uint8Array instead of nodebuffer for Next.js compatibility
+    const zipData = await zip.generateAsync({ type: 'uint8array' })
     
-    return new NextResponse(zipBuffer, {
+    return new NextResponse(zipData, {
       headers: {
         'Content-Type': 'application/zip',
         'Content-Disposition': `attachment; filename="${folderName}.zip"`,
