@@ -4,9 +4,11 @@ module.exports = {
     './app/**/*.{js,ts,jsx,tsx,mdx}',
     './src/**/*.{js,ts,jsx,tsx,mdx}',
   ],
-  darkMode: 'media', // Use system preferences
+  darkMode: 'media',
   theme: {
     extend: {},
   },
-  plugins: [],
+  plugins: [
+    require('@tailwindcss/typography'),
+  ],
 }

@@ -5,10 +5,10 @@ const openrouter = createOpenRouter({
   apiKey: process.env.OPENROUTER_API_KEY!,
 })
 
-// All available models for selection
+// All available models for selection - verified against OpenRouter Nov 2024
 export const ALL_MODELS = [
   // Flagships
-  { id: 'anthropic/claude-4-sonnet-20250522:online', name: 'Claude Sonnet 4', category: 'flagship', supportsVision: true, cost: 3 },
+  { id: 'anthropic/claude-sonnet-4.5:online', name: 'Claude Sonnet 4.5', category: 'flagship', supportsVision: true, cost: 3 },
   { id: 'anthropic/claude-opus-4.5:online', name: 'Claude Opus 4.5', category: 'flagship', supportsVision: true, cost: 5 },
   { id: 'openai/gpt-5.1:online', name: 'GPT-5.1', category: 'flagship', supportsVision: true, cost: 4, reasoning: 'medium' },
   { id: 'google/gemini-3-pro-preview:online', name: 'Gemini 3 Pro', category: 'flagship', supportsVision: true, cost: 3 },
@@ -20,12 +20,12 @@ export const ALL_MODELS = [
   
   // Reasoning Specialists
   { id: 'deepseek/deepseek-r1:online', name: 'DeepSeek R1', category: 'reasoning', supportsVision: false, cost: 1 },
-  { id: 'moonshotai/kimi-k2-thinking:online', name: 'Kimi K2 Thinking', category: 'reasoning', supportsVision: false, cost: 2 },
+  { id: 'moonshotai/kimi-k2:online', name: 'Kimi K2', category: 'reasoning', supportsVision: false, cost: 2 },
   { id: 'perplexity/sonar-deep-research', name: 'Perplexity Deep', category: 'reasoning', supportsVision: false, cost: 3 },
   
   // Grounding/Instruction-Following
   { id: 'openai/gpt-5.1-codex:online', name: 'GPT-5.1 Codex', category: 'grounding', supportsVision: true, cost: 4, reasoning: 'high' },
-  { id: 'x-ai/grok-4.1:online', name: 'Grok 4.1', category: 'grounding', supportsVision: true, cost: 2 },
+  { id: 'x-ai/grok-4:online', name: 'Grok 4', category: 'grounding', supportsVision: true, cost: 2 },
   { id: 'qwen/qwen3-max:online', name: 'Qwen3-Max', category: 'grounding', supportsVision: false, cost: 2 },
   
   // Search-Native
@@ -41,14 +41,14 @@ export const DEFAULT_QUICK_MODELS = [
 
 // Default selections for deep mode  
 export const DEFAULT_DEEP_MODELS = [
-  'anthropic/claude-4-sonnet-20250522:online',
+  'anthropic/claude-sonnet-4.5:online',
   'openai/gpt-5.1:online',
   'google/gemini-3-pro-preview:online',
   'deepseek/deepseek-r1:online',
   'perplexity/sonar-deep-research',
 ]
 
-export const ORCHESTRATOR_MODEL = 'anthropic/claude-4-sonnet-20250522'
+export const ORCHESTRATOR_MODEL = 'anthropic/claude-sonnet-4.5'
 
 export interface ResearchImage {
   base64: string

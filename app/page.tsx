@@ -30,7 +30,7 @@ interface ResearchResult {
 type Stage = 'input' | 'clarifying' | 'research' | 'results'
 
 const MODEL_OPTIONS: ModelOption[] = [
-  { id: 'anthropic/claude-4-sonnet-20250522:online', name: 'Claude Sonnet 4', category: '🏆 Flagship', cost: 3 },
+  { id: 'anthropic/claude-sonnet-4.5:online', name: 'Claude Sonnet 4.5', category: '🏆 Flagship', cost: 3 },
   { id: 'anthropic/claude-opus-4.5:online', name: 'Claude Opus 4.5', category: '🏆 Flagship', cost: 5 },
   { id: 'openai/gpt-5.1:online', name: 'GPT-5.1', category: '🏆 Flagship', cost: 4 },
   { id: 'google/gemini-3-pro-preview:online', name: 'Gemini 3 Pro', category: '🏆 Flagship', cost: 3 },
@@ -38,15 +38,16 @@ const MODEL_OPTIONS: ModelOption[] = [
   { id: 'google/gemini-2.5-flash-preview-05-20:online', name: 'Gemini Flash', category: '⚡ Fast', cost: 1 },
   { id: 'meta-llama/llama-4-maverick:online', name: 'Llama 4 Maverick', category: '⚡ Fast', cost: 0 },
   { id: 'deepseek/deepseek-r1:online', name: 'DeepSeek R1', category: '🧠 Reasoning', cost: 1 },
-  { id: 'moonshotai/kimi-k2-thinking:online', name: 'Kimi K2', category: '🧠 Reasoning', cost: 2 },
+  { id: 'moonshotai/kimi-k2:online', name: 'Kimi K2', category: '🧠 Reasoning', cost: 2 },
   { id: 'perplexity/sonar-deep-research', name: 'Perplexity Deep', category: '🧠 Reasoning', cost: 3 },
   { id: 'openai/gpt-5.1-codex:online', name: 'GPT-5.1 Codex', category: '🎯 Grounding', cost: 4 },
-  { id: 'x-ai/grok-4.1:online', name: 'Grok 4.1', category: '🎯 Grounding', cost: 2 },
+  { id: 'x-ai/grok-4:online', name: 'Grok 4', category: '🎯 Grounding', cost: 2 },
+  { id: 'qwen/qwen3-max:online', name: 'Qwen3-Max', category: '🎯 Grounding', cost: 2 },
   { id: 'perplexity/sonar-pro', name: 'Perplexity Sonar', category: '🔍 Search', cost: 2 },
 ]
 
 const DEFAULT_QUICK = ['anthropic/claude-haiku-4.5:online', 'google/gemini-2.5-flash-preview-05-20:online', 'deepseek/deepseek-r1:online']
-const DEFAULT_DEEP = ['anthropic/claude-4-sonnet-20250522:online', 'openai/gpt-5.1:online', 'google/gemini-3-pro-preview:online', 'deepseek/deepseek-r1:online', 'perplexity/sonar-deep-research']
+const DEFAULT_DEEP = ['anthropic/claude-sonnet-4.5:online', 'openai/gpt-5.1:online', 'google/gemini-3-pro-preview:online', 'deepseek/deepseek-r1:online', 'perplexity/sonar-deep-research']
 
 export default function Home() {
   const [query, setQuery] = useState('')
@@ -203,7 +204,7 @@ export default function Home() {
     const response = await fetch('/api/download', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(result),
+      body: JSON.stringify({ history: [...conversationHistory, result] }),
     })
     if (response.ok) {
       const blob = await response.blob()

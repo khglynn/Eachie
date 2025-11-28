@@ -20,22 +20,24 @@ interface ResearchResult {
   successCount: number
 }
 
+interface DownloadRequest {
+  history: ResearchResult[]  // Full conversation history
+  currentResult?: ResearchResult  // For backwards compatibility
+}
+
 // Create a smart, readable title from the research query
 function createSmartTitle(query: string): string {
-  // Remove common question starters
   let cleaned = query
     .replace(/^(I need to|I want to|How do I|What are|Can you|Please|Help me|Tell me about)\s*/i, '')
     .replace(/[^a-zA-Z0-9\s]/g, ' ')
     .trim()
   
-  // Take first 50 chars, but try to break at word boundary
   if (cleaned.length > 50) {
     cleaned = cleaned.slice(0, 50)
     const lastSpace = cleaned.lastIndexOf(' ')
     if (lastSpace > 30) cleaned = cleaned.slice(0, lastSpace)
   }
   
-  // Capitalize each word
   return cleaned
     .split(/\s+/)
     .filter(w => w.length > 0)
@@ -45,7 +47,22 @@ function createSmartTitle(query: string): string {
 
 export async function POST(request: NextRequest) {
   try {
-    const result: ResearchResult = await request.json()
+    const body = await request.json()
+    
+    // Handle both old format (single result) and new format (history array)
+    let history: ResearchResult[]
+    if (body.history && Array.isArray(body.history)) {
+      history = body.history
+    } else if (body.query) {
+      // Old format - single result
+      history = [body as ResearchResult]
+    } else {
+      throw new Error('Invalid request format')
+    }
+    
+    if (history.length === 0) {
+      throw new Error('No research results to download')
+    }
     
     const zip = new JSZip()
     const now = new Date()
@@ -53,56 +70,87 @@ export async function POST(request: NextRequest) {
     const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
     const dayName = dayNames[now.getDay()]
     
-    const title = createSmartTitle(result.query)
+    // Use first query for folder name
+    const title = createSmartTitle(history[0].query)
     const folderName = `${dateStr} ${dayName} - ${title}`
     
-    // Summary with frontmatter
-    const summaryContent = `---
+    // Calculate totals
+    const totalDuration = history.reduce((sum, r) => sum + r.totalDurationMs, 0)
+    const allResponses = history.flatMap(r => r.responses.filter(resp => resp.success))
+    const allModels = [...new Set(allResponses.map(r => r.model))]
+    
+    // Build combined summary with all queries and syntheses
+    let summaryContent = `---
 tags:
   - ai-research
 date: ${dateStr}
-question: "${result.query.slice(0, 200).replace(/"/g, '\\"')}"
-models: [${result.responses.filter(r => r.success).map(r => `"${r.model}"`).join(', ')}]
-duration: ${(result.totalDurationMs / 1000).toFixed(1)}s
+queries: ${history.length}
+models: [${allModels.map(m => `"${m}"`).join(', ')}]
+duration: ${(totalDuration / 1000).toFixed(1)}s
 status: completed
 ---
 
-# Research: ${result.query.slice(0, 100)}
+# Research Session: ${title}
 
-## Synthesis
+`
+    
+    // Add each research round
+    history.forEach((result, roundIdx) => {
+      const roundNum = roundIdx + 1
+      const isFollowUp = roundIdx > 0
+      
+      summaryContent += `## ${isFollowUp ? `Follow-up ${roundIdx}` : 'Initial Query'}: ${result.query.slice(0, 100)}
+
+### Synthesis
 
 ${result.synthesis}
 
-## Model Responses
+### Model Responses (Round ${roundNum})
 
-${result.responses.filter(r => r.success).map((r, i) => `- [[${String(i + 1).padStart(2, '0')}-${r.model.toLowerCase().replace(/\s+/g, '-')}|${r.model}]]`).join('\n')}
+${result.responses.filter(r => r.success).map((r, i) => {
+  const fileNum = String(roundNum).padStart(2, '0') + '-' + String(i + 1).padStart(2, '0')
+  return `- [[${fileNum}-${r.model.toLowerCase().replace(/\s+/g, '-')}|${r.model}]]`
+}).join('\n')}
 
 ---
-*Generated ${now.toLocaleString()}*`
 
+`
+    })
+    
+    summaryContent += `*Generated ${now.toLocaleString()}*`
+    
     zip.file(`${folderName}/00-summary.md`, summaryContent)
     
-    // Individual model files
-    result.responses.forEach((response, i) => {
-      if (!response.success) return
+    // Individual model files for each round
+    let globalFileIndex = 1
+    history.forEach((result, roundIdx) => {
+      const roundNum = roundIdx + 1
       
-      const modelSlug = response.model.toLowerCase().replace(/\s+/g, '-')
-      const filename = `${String(i + 1).padStart(2, '0')}-${modelSlug}.md`
-      
-      const content = `---
+      result.responses.forEach((response, i) => {
+        if (!response.success) return
+        
+        const modelSlug = response.model.toLowerCase().replace(/\s+/g, '-')
+        const fileNum = String(roundNum).padStart(2, '0') + '-' + String(i + 1).padStart(2, '0')
+        const filename = `${fileNum}-${modelSlug}.md`
+        
+        const content = `---
 model: ${response.model}
+round: ${roundNum}
+query: "${result.query.slice(0, 100).replace(/"/g, '\\"')}"
 duration: ${((response.durationMs || 0) / 1000).toFixed(1)}s
 date: ${dateStr}
 ---
 
 # ${response.model}
+## ${roundIdx === 0 ? 'Initial Query' : `Follow-up ${roundIdx}`}: ${result.query.slice(0, 80)}
 
 ${response.content}`
-      
-      zip.file(`${folderName}/${filename}`, content)
+        
+        zip.file(`${folderName}/${filename}`, content)
+        globalFileIndex++
+      })
     })
     
-    // Generate zip as arraybuffer and convert to Buffer for Next.js
     const zipArrayBuffer = await zip.generateAsync({ type: 'arraybuffer' })
     const zipBuffer = Buffer.from(zipArrayBuffer)
     
