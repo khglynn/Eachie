@@ -5,15 +5,16 @@ const openrouter = createOpenRouter({
   apiKey: process.env.OPENROUTER_API_KEY!,
 })
 
-// Vision-capable models for research
+// Research models with :online suffix for built-in web search
+// Vision-capable models can process images
 export const RESEARCH_MODELS = [
-  { id: 'anthropic/claude-haiku-4.5', name: 'Claude Haiku 4.5', supportsVision: true },
-  { id: 'google/gemini-2.5-flash-preview-05-20', name: 'Gemini 2.5 Flash', supportsVision: true },
-  { id: 'deepseek/deepseek-r1', name: 'DeepSeek R1', supportsVision: false },
+  { id: 'anthropic/claude-haiku-4.5:online', name: 'Claude Haiku 4.5', supportsVision: true },
+  { id: 'google/gemini-2.5-flash-preview-05-20:online', name: 'Gemini 2.5 Flash', supportsVision: true },
+  { id: 'deepseek/deepseek-r1:online', name: 'DeepSeek R1', supportsVision: false },
 ]
 
 export const ORCHESTRATOR_MODEL = 'anthropic/claude-4-sonnet-20250522'
-export const FOLLOWUP_MODEL = 'anthropic/claude-haiku-4.5'
+export const FOLLOWUP_MODEL = 'anthropic/claude-haiku-4.5:online'
 
 export interface ResearchImage {
   base64: string
@@ -40,105 +41,32 @@ export interface ResearchResult {
   totalDurationMs: number
   modelCount: number
   successCount: number
-  webSources?: string[]
 }
 
-// Tavily web search
-async function searchWeb(query: string): Promise<{ context: string; sources: string[] }> {
-  const apiKey = process.env.TAVILY_API_KEY
-  if (!apiKey) {
-    console.log('No TAVILY_API_KEY - skipping web search')
-    return { context: '', sources: [] }
-  }
-
-  try {
-    const response = await fetch('https://api.tavily.com/search', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        api_key: apiKey,
-        query: query,
-        search_depth: 'basic',
-        include_answer: true,
-        include_raw_content: false,
-        max_results: 5,
-      }),
-    })
-
-    if (!response.ok) {
-      console.error('Tavily search failed:', response.status)
-      return { context: '', sources: [] }
-    }
-
-    const data = await response.json()
-    
-    // Build context from results
-    const sources: string[] = []
-    let context = ''
-    
-    if (data.answer) {
-      context += `Web Search Summary:\n${data.answer}\n\n`
-    }
-    
-    if (data.results && data.results.length > 0) {
-      context += 'Relevant Web Sources:\n'
-      for (const result of data.results.slice(0, 5)) {
-        context += `\n**${result.title}** (${result.url})\n${result.content}\n`
-        sources.push(result.url)
-      }
-    }
-    
-    return { context, sources }
-  } catch (error) {
-    console.error('Tavily search error:', error)
-    return { context: '', sources: [] }
-  }
-}
-
-// System prompt with web search context
-function buildSystemPrompt(webContext: string): string {
-  const basePrompt = `You are an expert research assistant with deep knowledge across many domains.
+// System prompt for research models (they have built-in web search via :online suffix)
+const RESEARCH_SYSTEM_PROMPT = `You are an expert research assistant with built-in web search capabilities.
 
 GUIDELINES:
-- Provide thorough, well-reasoned answers
-- Be direct and confident - share what you know without excessive hedging
-- Structure responses clearly with key points, examples, and reasoning
-- Use markdown: ## headers, **bold** for key terms, bullet points
+- Search the web for current information when relevant
+- Provide thorough, well-reasoned answers with up-to-date data
+- Be direct and confident - cite your sources
+- Structure responses clearly with key points and examples
 
 RESPONSE FORMAT:
 - 400-600 words
+- Use markdown: ## headers, **bold** for key terms, bullet points
 - Lead with the most important information
-- End with practical takeaways`
-
-  if (webContext) {
-    return `${basePrompt}
-
-IMPORTANT: You have been provided with CURRENT WEB SEARCH RESULTS below. Use this real-time information to inform your response. Cite sources when relevant.
-
----
-${webContext}
----
-
-Integrate the above web research into your response where relevant.`
-  }
-
-  return basePrompt
-}
+- End with practical takeaways
+- Cite web sources when you use them`
 
 export async function runResearch(request: ResearchRequest): Promise<ResearchResult> {
   const startTime = Date.now()
   const hasImages = request.images && request.images.length > 0
 
-  // First, do web search to get current information
-  const { context: webContext, sources: webSources } = await searchWeb(request.query)
-
   // Build messages based on whether we have images
   const buildMessages = (model: typeof RESEARCH_MODELS[0]) => {
-    const systemPrompt = buildSystemPrompt(webContext)
     const messages: any[] = [
-      { role: 'system', content: systemPrompt }
+      { role: 'system', content: RESEARCH_SYSTEM_PROMPT }
     ]
 
     if (hasImages && model.supportsVision) {
@@ -202,15 +130,12 @@ export async function runResearch(request: ResearchRequest): Promise<ResearchRes
       synthesis: 'All models failed to respond. Please try again.',
       totalDurationMs: Date.now() - startTime,
       modelCount: RESEARCH_MODELS.length,
-      successCount: 0,
-      webSources
+      successCount: 0
     }
   }
 
   // Synthesize responses
   const synthesisPrompt = `Synthesize these AI model responses to: "${request.query}"
-
-${webContext ? `Web Search Context:\n${webContext}\n\n---\n\n` : ''}
 
 ${successful.map(r => `### ${r.model}\n${r.content}`).join('\n\n---\n\n')}
 
@@ -218,7 +143,6 @@ Create a unified synthesis that:
 1. Identifies key consensus points across models
 2. Highlights notable disagreements or unique insights
 3. Provides actionable takeaways
-${webSources.length > 0 ? '4. Cites web sources where relevant' : ''}
 
 Guidelines:
 - Write 300-500 words
@@ -238,18 +162,12 @@ Guidelines:
     synthesis: synthesisResult.text,
     totalDurationMs: Date.now() - startTime,
     modelCount: RESEARCH_MODELS.length,
-    successCount: successful.length,
-    webSources
+    successCount: successful.length
   }
 }
 
 export async function runFollowUp(query: string, context?: string): Promise<string> {
-  // Quick follow-ups can also benefit from web search
-  const { context: webContext } = await searchWeb(query)
-  
-  const systemPrompt = webContext 
-    ? `You are a helpful research assistant. Give concise, substantive answers.\n\nCurrent web info:\n${webContext}`
-    : 'You are a helpful research assistant. Give concise, substantive answers.'
+  const systemPrompt = 'You are a helpful research assistant with web search. Give concise, substantive answers. Search for current info when needed.'
 
   const messages: any[] = [
     { role: 'system', content: systemPrompt }
