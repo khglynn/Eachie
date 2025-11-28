@@ -40,37 +40,108 @@ export interface ResearchResult {
   totalDurationMs: number
   modelCount: number
   successCount: number
+  webSources?: string[]
 }
 
-// System prompt that encourages substantive research
-const RESEARCH_SYSTEM_PROMPT = `You are an expert research assistant. Your role is to provide thorough, well-reasoned answers based on your training knowledge.
+// Tavily web search
+async function searchWeb(query: string): Promise<{ context: string; sources: string[] }> {
+  const apiKey = process.env.TAVILY_API_KEY
+  if (!apiKey) {
+    console.log('No TAVILY_API_KEY - skipping web search')
+    return { context: '', sources: [] }
+  }
 
-Guidelines:
-- Draw from your extensive knowledge base to provide substantive, helpful answers
-- Be direct and confident in your responses - avoid excessive hedging
-- If discussing something that changes frequently (prices, availability), note that info may be dated
-- Cite sources from your training when relevant
-- Structure your response clearly with key points
-- Be concise but comprehensive - aim for 300-500 words
-- If images are provided, analyze them thoroughly and integrate observations into your response
+  try {
+    const response = await fetch('https://api.tavily.com/search', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        api_key: apiKey,
+        query: query,
+        search_depth: 'basic',
+        include_answer: true,
+        include_raw_content: false,
+        max_results: 5,
+      }),
+    })
 
-Do NOT:
-- Refuse to answer because you "can't browse the web" - use your training knowledge
-- Add excessive disclaimers about limitations
-- Say you cannot verify current information for every statement`
+    if (!response.ok) {
+      console.error('Tavily search failed:', response.status)
+      return { context: '', sources: [] }
+    }
+
+    const data = await response.json()
+    
+    // Build context from results
+    const sources: string[] = []
+    let context = ''
+    
+    if (data.answer) {
+      context += `Web Search Summary:\n${data.answer}\n\n`
+    }
+    
+    if (data.results && data.results.length > 0) {
+      context += 'Relevant Web Sources:\n'
+      for (const result of data.results.slice(0, 5)) {
+        context += `\n**${result.title}** (${result.url})\n${result.content}\n`
+        sources.push(result.url)
+      }
+    }
+    
+    return { context, sources }
+  } catch (error) {
+    console.error('Tavily search error:', error)
+    return { context: '', sources: [] }
+  }
+}
+
+// System prompt with web search context
+function buildSystemPrompt(webContext: string): string {
+  const basePrompt = `You are an expert research assistant with deep knowledge across many domains.
+
+GUIDELINES:
+- Provide thorough, well-reasoned answers
+- Be direct and confident - share what you know without excessive hedging
+- Structure responses clearly with key points, examples, and reasoning
+- Use markdown: ## headers, **bold** for key terms, bullet points
+
+RESPONSE FORMAT:
+- 400-600 words
+- Lead with the most important information
+- End with practical takeaways`
+
+  if (webContext) {
+    return `${basePrompt}
+
+IMPORTANT: You have been provided with CURRENT WEB SEARCH RESULTS below. Use this real-time information to inform your response. Cite sources when relevant.
+
+---
+${webContext}
+---
+
+Integrate the above web research into your response where relevant.`
+  }
+
+  return basePrompt
+}
 
 export async function runResearch(request: ResearchRequest): Promise<ResearchResult> {
   const startTime = Date.now()
   const hasImages = request.images && request.images.length > 0
 
+  // First, do web search to get current information
+  const { context: webContext, sources: webSources } = await searchWeb(request.query)
+
   // Build messages based on whether we have images
   const buildMessages = (model: typeof RESEARCH_MODELS[0]) => {
+    const systemPrompt = buildSystemPrompt(webContext)
     const messages: any[] = [
-      { role: 'system', content: RESEARCH_SYSTEM_PROMPT }
+      { role: 'system', content: systemPrompt }
     ]
 
     if (hasImages && model.supportsVision) {
-      // Multi-modal message with images
       const content: any[] = [
         { type: 'text', text: request.query }
       ]
@@ -84,10 +155,9 @@ export async function runResearch(request: ResearchRequest): Promise<ResearchRes
       
       messages.push({ role: 'user', content })
     } else {
-      // Text-only message
       let text = request.query
       if (hasImages && !model.supportsVision) {
-        text = `[Note: This query includes ${request.images!.length} image(s) that this model cannot process. Please answer based on the text query alone.]\n\n${request.query}`
+        text = `[Note: This query includes ${request.images!.length} image(s) that this model cannot process.]\n\n${request.query}`
       }
       messages.push({ role: 'user', content: text })
     }
@@ -132,12 +202,15 @@ export async function runResearch(request: ResearchRequest): Promise<ResearchRes
       synthesis: 'All models failed to respond. Please try again.',
       totalDurationMs: Date.now() - startTime,
       modelCount: RESEARCH_MODELS.length,
-      successCount: 0
+      successCount: 0,
+      webSources
     }
   }
 
   // Synthesize responses
-  const synthesisPrompt = `Synthesize these AI model responses to the question: "${request.query}"
+  const synthesisPrompt = `Synthesize these AI model responses to: "${request.query}"
+
+${webContext ? `Web Search Context:\n${webContext}\n\n---\n\n` : ''}
 
 ${successful.map(r => `### ${r.model}\n${r.content}`).join('\n\n---\n\n')}
 
@@ -145,13 +218,13 @@ Create a unified synthesis that:
 1. Identifies key consensus points across models
 2. Highlights notable disagreements or unique insights
 3. Provides actionable takeaways
+${webSources.length > 0 ? '4. Cites web sources where relevant' : ''}
 
 Guidelines:
 - Write 300-500 words
-- Use markdown formatting (headers, bullets, bold for emphasis)
-- Start directly with the synthesis - no meta-commentary about the process
-- Be substantive and specific, not generic
-- If models analyzed images, integrate those visual observations`
+- Use markdown formatting
+- Start directly with the synthesis
+- Be substantive and specific`
 
   const synthesisResult = await generateText({
     model: openrouter(ORCHESTRATOR_MODEL),
@@ -165,16 +238,21 @@ Guidelines:
     synthesis: synthesisResult.text,
     totalDurationMs: Date.now() - startTime,
     modelCount: RESEARCH_MODELS.length,
-    successCount: successful.length
+    successCount: successful.length,
+    webSources
   }
 }
 
 export async function runFollowUp(query: string, context?: string): Promise<string> {
+  // Quick follow-ups can also benefit from web search
+  const { context: webContext } = await searchWeb(query)
+  
+  const systemPrompt = webContext 
+    ? `You are a helpful research assistant. Give concise, substantive answers.\n\nCurrent web info:\n${webContext}`
+    : 'You are a helpful research assistant. Give concise, substantive answers.'
+
   const messages: any[] = [
-    { 
-      role: 'system', 
-      content: 'You are a helpful research assistant. Give concise, substantive answers. Draw from your knowledge confidently.' 
-    }
+    { role: 'system', content: systemPrompt }
   ]
 
   if (context) {
