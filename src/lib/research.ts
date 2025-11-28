@@ -5,11 +5,20 @@ const openrouter = createOpenRouter({
   apiKey: process.env.OPENROUTER_API_KEY!,
 })
 
-// Research models with :online suffix for built-in web search
-// Vision-capable models can process images
-export const RESEARCH_MODELS = [
+// Model configurations
+const QUICK_MODELS = [
   { id: 'anthropic/claude-haiku-4.5:online', name: 'Claude Haiku 4.5', supportsVision: true },
   { id: 'google/gemini-2.5-flash-preview-05-20:online', name: 'Gemini 2.5 Flash', supportsVision: true },
+  { id: 'deepseek/deepseek-r1:online', name: 'DeepSeek R1', supportsVision: false },
+]
+
+const DEEP_MODELS = [
+  { id: 'anthropic/claude-opus-4.5:online', name: 'Claude Opus 4.5', supportsVision: true },
+  { id: 'anthropic/claude-4-sonnet-20250522:online', name: 'Claude Sonnet 4', supportsVision: true },
+  { id: 'openai/gpt-5.1:online', name: 'GPT-5.1', supportsVision: true },
+  { id: 'google/gemini-3-pro-preview:online', name: 'Gemini 3 Pro', supportsVision: true },
+  { id: 'moonshotai/kimi-k2-thinking:online', name: 'Kimi K2', supportsVision: false },
+  { id: 'perplexity/sonar-deep-research', name: 'Perplexity Deep', supportsVision: false },
   { id: 'deepseek/deepseek-r1:online', name: 'DeepSeek R1', supportsVision: false },
 ]
 
@@ -24,6 +33,7 @@ export interface ResearchImage {
 export interface ResearchRequest {
   query: string
   images?: ResearchImage[]
+  mode?: 'quick' | 'deep'
 }
 
 export interface ModelResponse {
@@ -43,65 +53,52 @@ export interface ResearchResult {
   successCount: number
 }
 
-// System prompt for research models (they have built-in web search via :online suffix)
-const RESEARCH_SYSTEM_PROMPT = `You are an expert research assistant with built-in web search capabilities.
+const RESEARCH_SYSTEM_PROMPT = `You are an expert research assistant with built-in web search.
 
 GUIDELINES:
 - Search the web for current information when relevant
-- Provide thorough, well-reasoned answers with up-to-date data
-- Be direct and confident - cite your sources
-- Structure responses clearly with key points and examples
+- Provide thorough, well-reasoned answers with citations
+- Be direct and confident
+- Structure responses clearly
 
-RESPONSE FORMAT:
+FORMAT:
 - 400-600 words
-- Use markdown: ## headers, **bold** for key terms, bullet points
-- Lead with the most important information
-- End with practical takeaways
-- Cite web sources when you use them`
+- Use markdown: ## headers, **bold**, bullets
+- Cite sources when using web data
+- End with practical takeaways`
 
 export async function runResearch(request: ResearchRequest): Promise<ResearchResult> {
   const startTime = Date.now()
   const hasImages = request.images && request.images.length > 0
+  const models = request.mode === 'deep' ? DEEP_MODELS : QUICK_MODELS
 
-  // Build messages based on whether we have images
-  const buildMessages = (model: typeof RESEARCH_MODELS[0]) => {
-    const messages: any[] = [
-      { role: 'system', content: RESEARCH_SYSTEM_PROMPT }
-    ]
+  const buildMessages = (model: typeof models[0]) => {
+    const messages: any[] = [{ role: 'system', content: RESEARCH_SYSTEM_PROMPT }]
 
     if (hasImages && model.supportsVision) {
-      const content: any[] = [
-        { type: 'text', text: request.query }
-      ]
-      
+      const content: any[] = [{ type: 'text', text: request.query }]
       for (const img of request.images!) {
-        content.push({
-          type: 'image',
-          image: `data:${img.mimeType};base64,${img.base64}`
-        })
+        content.push({ type: 'image', image: `data:${img.mimeType};base64,${img.base64}` })
       }
-      
       messages.push({ role: 'user', content })
     } else {
       let text = request.query
       if (hasImages && !model.supportsVision) {
-        text = `[Note: This query includes ${request.images!.length} image(s) that this model cannot process.]\n\n${request.query}`
+        text = `[Note: ${request.images!.length} image(s) attached but not visible to this model]\n\n${request.query}`
       }
       messages.push({ role: 'user', content: text })
     }
-
     return messages
   }
 
-  // Query all models in parallel
   const responses = await Promise.all(
-    RESEARCH_MODELS.map(async (model) => {
+    models.map(async (model) => {
       const modelStart = Date.now()
       try {
         const result = await generateText({
           model: openrouter(model.id),
           messages: buildMessages(model),
-          maxTokens: 2000,
+          maxTokens: request.mode === 'deep' ? 3000 : 2000,
         })
         return {
           model: model.name,
@@ -129,25 +126,23 @@ export async function runResearch(request: ResearchRequest): Promise<ResearchRes
       responses,
       synthesis: 'All models failed to respond. Please try again.',
       totalDurationMs: Date.now() - startTime,
-      modelCount: RESEARCH_MODELS.length,
+      modelCount: models.length,
       successCount: 0
     }
   }
 
-  // Synthesize responses
-  const synthesisPrompt = `Synthesize these AI model responses to: "${request.query}"
+  const synthesisPrompt = `Synthesize these AI model responses to: "${request.query.slice(0, 200)}"
 
 ${successful.map(r => `### ${r.model}\n${r.content}`).join('\n\n---\n\n')}
 
-Create a unified synthesis that:
-1. Identifies key consensus points across models
-2. Highlights notable disagreements or unique insights
+Create a synthesis that:
+1. Identifies key consensus points
+2. Highlights disagreements or unique insights
 3. Provides actionable takeaways
 
 Guidelines:
-- Write 300-500 words
+- 300-500 words
 - Use markdown formatting
-- Start directly with the synthesis
 - Be substantive and specific`
 
   const synthesisResult = await generateText({
@@ -161,22 +156,18 @@ Guidelines:
     responses,
     synthesis: synthesisResult.text,
     totalDurationMs: Date.now() - startTime,
-    modelCount: RESEARCH_MODELS.length,
+    modelCount: models.length,
     successCount: successful.length
   }
 }
 
 export async function runFollowUp(query: string, context?: string): Promise<string> {
-  const systemPrompt = 'You are a helpful research assistant with web search. Give concise, substantive answers. Search for current info when needed.'
-
   const messages: any[] = [
-    { role: 'system', content: systemPrompt }
+    { role: 'system', content: 'You are a helpful research assistant with web search. Give concise, substantive answers.' }
   ]
-
   if (context) {
     messages.push({ role: 'assistant', content: context })
   }
-  
   messages.push({ role: 'user', content: query })
 
   const result = await generateText({
@@ -187,3 +178,6 @@ export async function runFollowUp(query: string, context?: string): Promise<stri
 
   return result.text
 }
+
+// Export for UI display
+export const RESEARCH_MODELS = QUICK_MODELS
