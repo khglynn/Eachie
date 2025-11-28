@@ -9,10 +9,19 @@ export async function POST(request: NextRequest) {
     const formData = await request.formData()
     const query = formData.get('query') as string
     const mode = (formData.get('mode') as string) || 'quick'
+    const modelIdsJson = formData.get('modelIds') as string
 
     if (!query) {
       return NextResponse.json({ error: 'Query is required' }, { status: 400 })
     }
+
+    // Parse model IDs
+    let modelIds: string[] | undefined
+    try {
+      if (modelIdsJson) {
+        modelIds = JSON.parse(modelIdsJson)
+      }
+    } catch {}
 
     // Process images
     const images: ResearchImage[] = []
@@ -33,7 +42,8 @@ export async function POST(request: NextRequest) {
     const result = await runResearch({
       query,
       images: images.length > 0 ? images : undefined,
-      mode: mode as 'quick' | 'deep'
+      mode: mode as 'quick' | 'deep',
+      modelIds
     })
 
     return NextResponse.json(result)

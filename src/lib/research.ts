@@ -5,25 +5,49 @@ const openrouter = createOpenRouter({
   apiKey: process.env.OPENROUTER_API_KEY!,
 })
 
-// Model configurations
-const QUICK_MODELS = [
-  { id: 'anthropic/claude-haiku-4.5:online', name: 'Claude Haiku 4.5', supportsVision: true },
-  { id: 'google/gemini-2.5-flash-preview-05-20:online', name: 'Gemini 2.5 Flash', supportsVision: true },
-  { id: 'deepseek/deepseek-r1:online', name: 'DeepSeek R1', supportsVision: false },
+// All available models for selection
+export const ALL_MODELS = [
+  // Flagships
+  { id: 'anthropic/claude-4-sonnet-20250522:online', name: 'Claude Sonnet 4', category: 'flagship', supportsVision: true, cost: 3 },
+  { id: 'anthropic/claude-opus-4.5:online', name: 'Claude Opus 4.5', category: 'flagship', supportsVision: true, cost: 5 },
+  { id: 'openai/gpt-5.1:online', name: 'GPT-5.1', category: 'flagship', supportsVision: true, cost: 4, reasoning: 'medium' },
+  { id: 'google/gemini-3-pro-preview:online', name: 'Gemini 3 Pro', category: 'flagship', supportsVision: true, cost: 3 },
+  
+  // Fast & Economical
+  { id: 'anthropic/claude-haiku-4.5:online', name: 'Claude Haiku 4.5', category: 'fast', supportsVision: true, cost: 1 },
+  { id: 'google/gemini-2.5-flash-preview-05-20:online', name: 'Gemini 2.5 Flash', category: 'fast', supportsVision: true, cost: 1 },
+  { id: 'meta-llama/llama-4-maverick:online', name: 'Llama 4 Maverick', category: 'fast', supportsVision: false, cost: 0 },
+  
+  // Reasoning Specialists
+  { id: 'deepseek/deepseek-r1:online', name: 'DeepSeek R1', category: 'reasoning', supportsVision: false, cost: 1 },
+  { id: 'moonshotai/kimi-k2-thinking:online', name: 'Kimi K2 Thinking', category: 'reasoning', supportsVision: false, cost: 2 },
+  { id: 'perplexity/sonar-deep-research', name: 'Perplexity Deep', category: 'reasoning', supportsVision: false, cost: 3 },
+  
+  // Grounding/Instruction-Following
+  { id: 'openai/gpt-5.1-codex:online', name: 'GPT-5.1 Codex', category: 'grounding', supportsVision: true, cost: 4, reasoning: 'high' },
+  { id: 'x-ai/grok-4.1:online', name: 'Grok 4.1', category: 'grounding', supportsVision: true, cost: 2 },
+  
+  // Search-Native
+  { id: 'perplexity/sonar-pro', name: 'Perplexity Sonar Pro', category: 'search', supportsVision: false, cost: 2 },
 ]
 
-const DEEP_MODELS = [
-  { id: 'anthropic/claude-opus-4.5:online', name: 'Claude Opus 4.5', supportsVision: true },
-  { id: 'anthropic/claude-4-sonnet-20250522:online', name: 'Claude Sonnet 4', supportsVision: true },
-  { id: 'openai/gpt-5.1:online', name: 'GPT-5.1', supportsVision: true },
-  { id: 'google/gemini-3-pro-preview:online', name: 'Gemini 3 Pro', supportsVision: true },
-  { id: 'moonshotai/kimi-k2-thinking:online', name: 'Kimi K2', supportsVision: false },
-  { id: 'perplexity/sonar-deep-research', name: 'Perplexity Deep', supportsVision: false },
-  { id: 'deepseek/deepseek-r1:online', name: 'DeepSeek R1', supportsVision: false },
+// Default selections for quick mode
+export const DEFAULT_QUICK_MODELS = [
+  'anthropic/claude-haiku-4.5:online',
+  'google/gemini-2.5-flash-preview-05-20:online', 
+  'deepseek/deepseek-r1:online',
+]
+
+// Default selections for deep mode  
+export const DEFAULT_DEEP_MODELS = [
+  'anthropic/claude-4-sonnet-20250522:online',
+  'openai/gpt-5.1:online',
+  'google/gemini-3-pro-preview:online',
+  'deepseek/deepseek-r1:online',
+  'perplexity/sonar-deep-research',
 ]
 
 export const ORCHESTRATOR_MODEL = 'anthropic/claude-4-sonnet-20250522'
-export const FOLLOWUP_MODEL = 'anthropic/claude-haiku-4.5:online'
 
 export interface ResearchImage {
   base64: string
@@ -33,11 +57,13 @@ export interface ResearchImage {
 export interface ResearchRequest {
   query: string
   images?: ResearchImage[]
+  modelIds?: string[] // Selected model IDs
   mode?: 'quick' | 'deep'
 }
 
 export interface ModelResponse {
   model: string
+  modelId: string
   content: string
   success: boolean
   error?: string
@@ -58,19 +84,28 @@ const RESEARCH_SYSTEM_PROMPT = `You are an expert research assistant with built-
 GUIDELINES:
 - Search the web for current information when relevant
 - Provide thorough, well-reasoned answers with citations
-- Be direct and confident
+- Be direct and confident - ground your response in facts
 - Structure responses clearly
 
 FORMAT:
 - 400-600 words
 - Use markdown: ## headers, **bold**, bullets
-- Cite sources when using web data
+- Cite web sources when using current data
 - End with practical takeaways`
 
 export async function runResearch(request: ResearchRequest): Promise<ResearchResult> {
   const startTime = Date.now()
   const hasImages = request.images && request.images.length > 0
-  const models = request.mode === 'deep' ? DEEP_MODELS : QUICK_MODELS
+  
+  // Get models to use
+  let modelIds = request.modelIds
+  if (!modelIds || modelIds.length === 0) {
+    modelIds = request.mode === 'deep' ? DEFAULT_DEEP_MODELS : DEFAULT_QUICK_MODELS
+  }
+  
+  const models = modelIds
+    .map(id => ALL_MODELS.find(m => m.id === id))
+    .filter((m): m is typeof ALL_MODELS[0] => m !== undefined)
 
   const buildMessages = (model: typeof models[0]) => {
     const messages: any[] = [{ role: 'system', content: RESEARCH_SYSTEM_PROMPT }]
@@ -95,13 +130,26 @@ export async function runResearch(request: ResearchRequest): Promise<ResearchRes
     models.map(async (model) => {
       const modelStart = Date.now()
       try {
-        const result = await generateText({
+        // Build options with reasoning if supported
+        const options: any = {
           model: openrouter(model.id),
           messages: buildMessages(model),
           maxTokens: request.mode === 'deep' ? 3000 : 2000,
-        })
+        }
+        
+        // Add reasoning effort for GPT-5.1 models
+        if (model.reasoning) {
+          options.experimental_providerMetadata = {
+            openrouter: {
+              reasoning: { effort: model.reasoning }
+            }
+          }
+        }
+
+        const result = await generateText(options)
         return {
           model: model.name,
+          modelId: model.id,
           content: result.text,
           success: true,
           durationMs: Date.now() - modelStart
@@ -109,6 +157,7 @@ export async function runResearch(request: ResearchRequest): Promise<ResearchRes
       } catch (error) {
         return {
           model: model.name,
+          modelId: model.id,
           content: '',
           success: false,
           error: error instanceof Error ? error.message : String(error),
@@ -137,12 +186,11 @@ ${successful.map(r => `### ${r.model}\n${r.content}`).join('\n\n---\n\n')}
 
 Create a synthesis that:
 1. Identifies key consensus points
-2. Highlights disagreements or unique insights
+2. Highlights disagreements or unique insights  
 3. Provides actionable takeaways
 
 Guidelines:
-- 300-500 words
-- Use markdown formatting
+- 300-500 words, use markdown formatting
 - Be substantive and specific`
 
   const synthesisResult = await generateText({
@@ -160,24 +208,3 @@ Guidelines:
     successCount: successful.length
   }
 }
-
-export async function runFollowUp(query: string, context?: string): Promise<string> {
-  const messages: any[] = [
-    { role: 'system', content: 'You are a helpful research assistant with web search. Give concise, substantive answers.' }
-  ]
-  if (context) {
-    messages.push({ role: 'assistant', content: context })
-  }
-  messages.push({ role: 'user', content: query })
-
-  const result = await generateText({
-    model: openrouter(FOLLOWUP_MODEL),
-    messages,
-    maxTokens: 1000,
-  })
-
-  return result.text
-}
-
-// Export for UI display
-export const RESEARCH_MODELS = QUICK_MODELS
