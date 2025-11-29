@@ -1,8 +1,10 @@
 'use client'
 
 import { useState, useRef, useCallback, useEffect } from 'react'
+import ReactMarkdown from 'react-markdown'
 
 // ============ Types ============
+
 interface ModelOption {
   id: string
   name: string
@@ -18,11 +20,7 @@ interface ModelResponse {
   success: boolean
   error?: string
   durationMs?: number
-  usage?: {
-    promptTokens: number
-    completionTokens: number
-    totalTokens: number
-  }
+  usage?: { promptTokens: number; completionTokens: number; totalTokens: number }
   cost?: number
 }
 
@@ -51,27 +49,36 @@ interface Settings {
 type Stage = 'input' | 'clarifying' | 'research' | 'results'
 
 // ============ Constants ============
+
 const MODEL_OPTIONS: ModelOption[] = [
   // Anthropic
   { id: 'anthropic/claude-opus-4.5:online', name: 'Claude Opus 4.5', description: 'Top reasoning & writing', provider: 'Anthropic', cost: 5 },
   { id: 'anthropic/claude-sonnet-4.5:online', name: 'Claude Sonnet 4.5', description: 'Best all-rounder', provider: 'Anthropic', cost: 3 },
   { id: 'anthropic/claude-haiku-4.5:online', name: 'Claude Haiku 4.5', description: 'Fast & economical', provider: 'Anthropic', cost: 1 },
+  
   // OpenAI
-  { id: 'openai/gpt-5.1:online', name: 'GPT-5.1', description: 'High reasoning depth', provider: 'OpenAI', cost: 4 },
-  { id: 'openai/o3-mini:online', name: 'o3-mini', description: 'STEM-focused', provider: 'OpenAI', cost: 2 },
+  { id: 'openai/gpt-5.1:online', name: 'GPT-5.1 (high)', description: 'Deep reasoning', provider: 'OpenAI', cost: 4 },
+  { id: 'openai/o3:online', name: 'o3 (high)', description: 'Top reasoning model', provider: 'OpenAI', cost: 5 },
+  { id: 'openai/o3-mini:online', name: 'o3-mini (low)', description: 'STEM-focused, efficient', provider: 'OpenAI', cost: 2 },
+  
   // Google
   { id: 'google/gemini-3-pro-preview:online', name: 'Gemini 3 Pro', description: 'Top multimodal', provider: 'Google', cost: 3 },
   { id: 'google/gemini-2.5-pro:online', name: 'Gemini 2.5 Pro', description: 'High-end creative', provider: 'Google', cost: 3 },
   { id: 'google/gemini-2.5-flash:online', name: 'Gemini 2.5 Flash', description: 'Built-in thinking', provider: 'Google', cost: 1 },
   { id: 'google/gemini-2.0-flash:online', name: 'Gemini 2.0 Flash', description: 'Fastest & cheapest', provider: 'Google', cost: 0 },
+  
   // Perplexity
   { id: 'perplexity/sonar-deep-research', name: 'Perplexity Deep', description: 'Exhaustive research', provider: 'Perplexity', cost: 3 },
   { id: 'perplexity/sonar-pro', name: 'Perplexity Sonar', description: 'Fast search-native', provider: 'Perplexity', cost: 2 },
-  // Others
+  
+  // X.AI
   { id: 'x-ai/grok-4:online', name: 'Grok 4', description: 'Creative real-time', provider: 'X.AI', cost: 2 },
-  { id: 'deepseek/deepseek-r1:online', name: 'DeepSeek R1', description: 'Open reasoning', provider: 'DeepSeek', cost: 1 },
+  { id: 'x-ai/grok-4.1-fast:online', name: 'Grok Fast (thinking)', description: 'Fast with reasoning', provider: 'X.AI', cost: 2 },
+  
+  // Others
+  { id: 'deepseek/deepseek-r1:online', name: 'DeepSeek R1', description: 'Open reasoning champ', provider: 'DeepSeek', cost: 1 },
   { id: 'qwen/qwen3-235b-a22b:online', name: 'Qwen3-Max', description: 'Multilingual creative', provider: 'Alibaba', cost: 2 },
-  { id: 'moonshotai/kimi-k2:online', name: 'Kimi K2', description: 'Long-context', provider: 'Moonshot', cost: 2 },
+  { id: 'moonshotai/kimi-k2:online', name: 'Kimi K2', description: 'Long-context master', provider: 'Moonshot', cost: 2 },
   { id: 'meta-llama/llama-4-maverick:online', name: 'Llama 4 Maverick', description: 'Open multimodal', provider: 'Meta', cost: 0 },
   { id: 'minimax/minimax-m1-80k:online', name: 'MiniMax M1', description: 'Extended context', provider: 'MiniMax', cost: 2 },
 ]
@@ -79,7 +86,7 @@ const MODEL_OPTIONS: ModelOption[] = [
 const ORCHESTRATOR_OPTIONS = [
   { id: 'anthropic/claude-sonnet-4.5', name: 'Claude Sonnet 4.5', description: 'Balanced & reliable' },
   { id: 'anthropic/claude-opus-4.5', name: 'Claude Opus 4.5', description: 'Maximum quality' },
-  { id: 'openai/gpt-5.1', name: 'GPT-5.1', description: 'High reasoning depth' },
+  { id: 'openai/gpt-5.1', name: 'GPT-5.1', description: 'Deep reasoning' },
   { id: 'google/gemini-3-pro-preview', name: 'Gemini 3 Pro', description: 'Multimodal synthesis' },
 ]
 
@@ -89,8 +96,7 @@ const TRANSCRIPTION_SERVICES = [
   { id: 'groq', name: 'Groq Whisper', key: 'groqKey' },
 ]
 
-const DEFAULT_QUICK = ['anthropic/claude-haiku-4.5:online', 'google/gemini-2.5-flash:online', 'deepseek/deepseek-r1:online']
-const DEFAULT_DEEP = ['anthropic/claude-sonnet-4.5:online', 'openai/gpt-5.1:online', 'google/gemini-3-pro-preview:online', 'deepseek/deepseek-r1:online', 'perplexity/sonar-deep-research']
+const DEFAULT_MODELS = ['anthropic/claude-haiku-4.5:online', 'google/gemini-2.5-flash:online', 'deepseek/deepseek-r1:online']
 
 const DEFAULT_SETTINGS: Settings = {
   openrouterKey: '',
@@ -103,6 +109,7 @@ const DEFAULT_SETTINGS: Settings = {
 }
 
 // ============ Main Component ============
+
 export default function Home() {
   // Core state
   const [query, setQuery] = useState('')
@@ -113,8 +120,7 @@ export default function Home() {
   const [stage, setStage] = useState<Stage>('input')
   
   // Model selection
-  const [selectedModels, setSelectedModels] = useState<string[]>(DEFAULT_QUICK)
-  const [isDeepMode, setIsDeepMode] = useState(false)
+  const [selectedModels, setSelectedModels] = useState<string[]>(DEFAULT_MODELS)
   const [showModelSelector, setShowModelSelector] = useState(false)
   
   // Clarifying questions
@@ -135,12 +141,19 @@ export default function Home() {
   const [settings, setSettings] = useState<Settings>(DEFAULT_SETTINGS)
   const [showSettings, setShowSettings] = useState(false)
   const [showHelp, setShowHelp] = useState(false)
+  const [byokMode, setByokMode] = useState(false)
   
   const fileInputRef = useRef<HTMLInputElement>(null)
 
+  // Check for ?byok=true URL parameter
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search)
+    setByokMode(params.get('byok') === 'true')
+  }, [])
+
   // Load settings from localStorage
   useEffect(() => {
-    const saved = localStorage.getItem('researchAgentSettings')
+    const saved = localStorage.getItem('eachieSettings')
     if (saved) {
       try {
         setSettings({ ...DEFAULT_SETTINGS, ...JSON.parse(saved) })
@@ -151,29 +164,24 @@ export default function Home() {
   // Save settings to localStorage
   const saveSettings = (newSettings: Settings) => {
     setSettings(newSettings)
-    localStorage.setItem('researchAgentSettings', JSON.stringify(newSettings))
+    localStorage.setItem('eachieSettings', JSON.stringify(newSettings))
   }
 
   // Filter visible models
   const visibleModels = MODEL_OPTIONS.filter(m => !settings.hiddenModels.includes(m.id))
 
-  // Update selected models when deep mode changes
-  useEffect(() => {
-    const visible = visibleModels.map(m => m.id)
-    const defaults = isDeepMode ? DEFAULT_DEEP : DEFAULT_QUICK
-    setSelectedModels(defaults.filter(id => visible.includes(id)).slice(0, 5))
-  }, [isDeepMode, settings.hiddenModels])
-
   // ============ Model Selection ============
+
   const toggleModel = (modelId: string) => {
     if (selectedModels.includes(modelId)) {
       setSelectedModels(selectedModels.filter(id => id !== modelId))
-    } else if (selectedModels.length < 5) {
+    } else if (selectedModels.length < 8) {
       setSelectedModels([...selectedModels, modelId])
     }
   }
 
   // ============ Image Handling ============
+
   const handleImageChange = useCallback((files: FileList | null) => {
     if (!files) return
     const newFiles = Array.from(files).filter(f => 
@@ -194,6 +202,7 @@ export default function Home() {
   }
 
   // ============ Voice Recording ============
+
   const startRecording = async () => {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
@@ -242,6 +251,9 @@ export default function Home() {
       if (keyMap[settings.transcriptionService]) {
         formData.append('apiKey', keyMap[settings.transcriptionService])
       }
+      if (byokMode) {
+        formData.append('byokMode', 'true')
+      }
       
       const response = await fetch('/api/transcribe', {
         method: 'POST',
@@ -263,6 +275,7 @@ export default function Home() {
   }
 
   // ============ Research Flow ============
+
   const compactContext = (history: ResearchResult[]): string => {
     if (history.length === 0) return ''
     const recent = history.slice(-2)
@@ -282,7 +295,8 @@ export default function Home() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
           query: userQuery,
-          apiKey: settings.openrouterKey || undefined
+          apiKey: settings.openrouterKey || undefined,
+          byokMode
         }),
       })
       
@@ -327,14 +341,18 @@ export default function Home() {
         body: JSON.stringify({
           query: enhancedQuery,
           images: base64Images.length > 0 ? base64Images : undefined,
-          mode: isDeepMode ? 'deep' : 'quick',
           modelIds: selectedModels,
           orchestratorId: settings.orchestrator,
           apiKey: settings.openrouterKey || undefined,
+          byokMode,
         }),
       })
 
-      if (!response.ok) throw new Error(await response.text())
+      if (!response.ok) {
+        const errText = await response.text()
+        throw new Error(errText || 'Research failed')
+      }
+      
       const result: ResearchResult = await response.json()
       
       setConversationHistory(prev => [...prev, result])
@@ -344,18 +362,25 @@ export default function Home() {
         setQuery('')
         setImages([])
         setImagePreviews([])
+        setOriginalQuery('')
+        setClarifyingQuestions([])
+        setAnswers([])
       } else {
         setFollowUpQuery('')
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Research failed')
-      setStage('results')
+      // Stay in current stage to preserve form data
+      if (stage === 'research') {
+        setStage(isFollowUp ? 'results' : 'input')
+      }
     } finally {
       setIsLoading(false)
     }
   }
 
   // ============ Event Handlers ============
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
     if (!query.trim()) return
@@ -402,7 +427,7 @@ export default function Home() {
       const url = URL.createObjectURL(blob)
       const a = document.createElement('a')
       a.href = url
-      a.download = `research-${Date.now()}.zip`
+      a.download = `eachie-research-${Date.now()}.zip`
       a.click()
       URL.revokeObjectURL(url)
     } catch {
@@ -415,6 +440,9 @@ export default function Home() {
     setConversationHistory([])
     setQuery('')
     setFollowUpQuery('')
+    setOriginalQuery('')
+    setClarifyingQuestions([])
+    setAnswers([])
     setError(null)
   }
 
@@ -422,7 +450,6 @@ export default function Home() {
 
   // ============ Sub-Components ============
   
-  // Pill Button Component
   const Pill = ({ active, onClick, icon, label, recording }: { 
     active?: boolean, onClick: () => void, icon: string, label: string, recording?: boolean 
   }) => (
@@ -439,7 +466,6 @@ export default function Home() {
     </button>
   )
 
-  // Settings Modal
   const SettingsModal = () => (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4" onClick={() => setShowSettings(false)}>
       <div className="bg-white dark:bg-slate-800 rounded-xl max-w-lg w-full max-h-[90vh] overflow-y-auto shadow-2xl" onClick={e => e.stopPropagation()}>
@@ -449,14 +475,27 @@ export default function Home() {
         </div>
         
         <div className="p-6 space-y-6">
+          {/* BYOK Notice */}
+          {byokMode && (
+            <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-3">
+              <p className="text-sm text-blue-700 dark:text-blue-300">
+                <strong>BYOK Mode Active</strong> - You must provide your own API keys to use this app.
+              </p>
+            </div>
+          )}
+          
           {/* API Keys */}
           <div>
             <h3 className="text-sm font-semibold text-slate-700 dark:text-slate-200 mb-1">API Keys</h3>
-            <p className="text-xs text-slate-500 dark:text-slate-400 mb-3">Optional. Uses server keys if empty. Keys are stored locally in your browser.</p>
+            <p className="text-xs text-slate-500 dark:text-slate-400 mb-3">
+              {byokMode ? 'Required for BYOK mode.' : 'Optional. Uses server keys if empty.'} Keys are stored locally in your browser.
+            </p>
             
             <div className="space-y-3">
               <div>
-                <label className="block text-xs font-medium text-slate-600 dark:text-slate-300 mb-1">OpenRouter (for all models)</label>
+                <label className="block text-xs font-medium text-slate-600 dark:text-slate-300 mb-1">
+                  OpenRouter <span className="text-red-500">{byokMode ? '*' : ''}</span>
+                </label>
                 <input
                   type="password"
                   value={settings.openrouterKey}
@@ -466,7 +505,7 @@ export default function Home() {
                 />
               </div>
               <div>
-                <label className="block text-xs font-medium text-slate-600 dark:text-slate-300 mb-1">OpenAI (for voice transcription)</label>
+                <label className="block text-xs font-medium text-slate-600 dark:text-slate-300 mb-1">OpenAI (for voice)</label>
                 <input
                   type="password"
                   value={settings.openaiKey}
@@ -476,7 +515,7 @@ export default function Home() {
                 />
               </div>
               <div>
-                <label className="block text-xs font-medium text-slate-600 dark:text-slate-300 mb-1">Deepgram (for voice transcription)</label>
+                <label className="block text-xs font-medium text-slate-600 dark:text-slate-300 mb-1">Deepgram (for voice)</label>
                 <input
                   type="password"
                   value={settings.deepgramKey}
@@ -486,7 +525,7 @@ export default function Home() {
                 />
               </div>
               <div>
-                <label className="block text-xs font-medium text-slate-600 dark:text-slate-300 mb-1">Groq (for voice transcription)</label>
+                <label className="block text-xs font-medium text-slate-600 dark:text-slate-300 mb-1">Groq (for voice)</label>
                 <input
                   type="password"
                   value={settings.groqKey}
@@ -501,11 +540,12 @@ export default function Home() {
           {/* Synthesis Model */}
           <div>
             <h3 className="text-sm font-semibold text-slate-700 dark:text-slate-200 mb-2">Synthesis Model</h3>
-            <p className="text-xs text-slate-500 dark:text-slate-400 mb-3">Which model combines all responses into a final answer.</p>
+            <p className="text-xs text-slate-500 dark:text-slate-400 mb-3">Which model combines all responses.</p>
             <div className="grid grid-cols-2 gap-2">
               {ORCHESTRATOR_OPTIONS.map(orch => (
                 <button
                   key={orch.id}
+                  type="button"
                   onClick={() => saveSettings({ ...settings, orchestrator: orch.id })}
                   className={`text-left p-2 rounded-lg text-sm transition-colors
                     ${settings.orchestrator === orch.id 
@@ -526,6 +566,7 @@ export default function Home() {
               {TRANSCRIPTION_SERVICES.map(svc => (
                 <button
                   key={svc.id}
+                  type="button"
                   onClick={() => saveSettings({ ...settings, transcriptionService: svc.id })}
                   className={`px-3 py-1.5 rounded-full text-sm transition-colors
                     ${settings.transcriptionService === svc.id 
@@ -556,7 +597,7 @@ export default function Home() {
                     }}
                     className="rounded text-blue-600 w-3.5 h-3.5"
                   />
-                  <span className="text-slate-600 dark:text-slate-300 truncate">{model.name}</span>
+                  <span className="text-slate-600 dark:text-slate-300 truncate text-xs">{model.name}</span>
                 </label>
               ))}
             </div>
@@ -566,7 +607,6 @@ export default function Home() {
     </div>
   )
 
-  // Help Modal
   const HelpModal = () => (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4" onClick={() => setShowHelp(false)}>
       <div className="bg-white dark:bg-slate-800 rounded-xl max-w-lg w-full max-h-[90vh] overflow-y-auto shadow-2xl" onClick={e => e.stopPropagation()}>
@@ -577,45 +617,46 @@ export default function Home() {
         
         <div className="p-6 space-y-4 text-sm text-slate-600 dark:text-slate-300">
           <section>
-            <h3 className="font-semibold text-slate-800 dark:text-slate-100 mb-2">🔬 What is Research Agent?</h3>
-            <p>A multi-model AI research tool that queries multiple AI models simultaneously, then synthesizes their responses into a single comprehensive answer. All models have web search enabled.</p>
+            <h3 className="font-semibold text-slate-800 dark:text-slate-100 mb-2">🔬 What is Eachie?</h3>
+            <p>A multi-model AI research tool that queries multiple models simultaneously, then synthesizes their responses. All models have web search enabled for current information.</p>
           </section>
           
           <section>
-            <h3 className="font-semibold text-slate-800 dark:text-slate-100 mb-2">⚡ Quick Mode vs Deep Mode</h3>
-            <p><strong>Quick</strong> uses 3 fast, economical models (~20 sec). <strong>Deep</strong> uses 5 flagship models for thorough research (~60 sec).</p>
-          </section>
-          
-          <section>
-            <h3 className="font-semibold text-slate-800 dark:text-slate-100 mb-2">🎯 Custom Model Selection</h3>
-            <p>Click "Models" to choose which models to query (max 5). Different models have different strengths - mix flagship reasoning models with fast search-focused ones.</p>
+            <h3 className="font-semibold text-slate-800 dark:text-slate-100 mb-2">🎯 Model Selection</h3>
+            <p>Click "Models" to choose which models to query (up to 8). Mix different types: flagship reasoning models, fast search-focused ones, or specialized tools.</p>
           </section>
           
           <section>
             <h3 className="font-semibold text-slate-800 dark:text-slate-100 mb-2">📷 Images & 🎤 Voice</h3>
-            <p>Add up to 4 images for visual context (product photos, charts, screenshots). Use voice to speak your query instead of typing.</p>
+            <p>Add up to 4 images for visual context. Use voice to speak your query instead of typing.</p>
           </section>
           
           <section>
             <h3 className="font-semibold text-slate-800 dark:text-slate-100 mb-2">💬 Follow-up Questions</h3>
-            <p>After getting results, ask follow-up questions. Context from previous rounds is automatically included.</p>
+            <p>Ask follow-up questions after results. Context from previous rounds is automatically included.</p>
           </section>
           
           <section>
             <h3 className="font-semibold text-slate-800 dark:text-slate-100 mb-2">💾 Download</h3>
-            <p>Download all research as a ZIP file with markdown files - perfect for saving to Obsidian or other note apps.</p>
+            <p>Download research as a ZIP with markdown files - perfect for Obsidian or other note apps.</p>
           </section>
           
           <section>
             <h3 className="font-semibold text-slate-800 dark:text-slate-100 mb-2">⚙️ Settings</h3>
-            <p>Configure your own API keys (optional), choose which model synthesizes answers, select voice transcription service, or hide models you don't want to use.</p>
+            <p>Configure API keys (required in BYOK mode), choose synthesis model, select voice service, or hide models you don't use.</p>
           </section>
+          
+          {byokMode && (
+            <section>
+              <h3 className="font-semibold text-slate-800 dark:text-slate-100 mb-2">🔑 BYOK Mode</h3>
+              <p>This URL requires you to provide your own OpenRouter API key. Get one at <a href="https://openrouter.ai" target="_blank" className="text-blue-600 hover:underline">openrouter.ai</a>.</p>
+            </section>
+          )}
         </div>
       </div>
     </div>
   )
 
-  // Model Selector Accordion
   const ModelAccordion = () => (
     <div className="mt-2">
       <button
@@ -626,13 +667,13 @@ export default function Home() {
         <span className="flex items-center gap-2">
           <span>🎯</span>
           <span className="font-medium">Models</span>
-          <span className="text-slate-400">({selectedModels.length}/5 selected)</span>
+          <span className="text-slate-400">({selectedModels.length}/8 selected)</span>
         </span>
         <span className="text-xs">{showModelSelector ? '▲' : '▼'}</span>
       </button>
       
       {showModelSelector && (
-        <div className="mt-2 p-3 bg-slate-50 dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700">
+        <div className="mt-2 p-3 bg-slate-50 dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 max-h-64 overflow-y-auto">
           {/* Group by provider */}
           {['Anthropic', 'OpenAI', 'Google', 'Perplexity', 'X.AI', 'DeepSeek', 'Alibaba', 'Moonshot', 'Meta', 'MiniMax'].map(provider => {
             const providerModels = visibleModels.filter(m => m.provider === provider)
@@ -646,7 +687,7 @@ export default function Home() {
                       key={model.id}
                       type="button"
                       onClick={() => toggleModel(model.id)}
-                      disabled={!selectedModels.includes(model.id) && selectedModels.length >= 5}
+                      disabled={!selectedModels.includes(model.id) && selectedModels.length >= 8}
                       className={`px-2.5 py-1 rounded-md text-xs transition-all
                         ${selectedModels.includes(model.id)
                           ? 'bg-blue-500 text-white'
@@ -666,6 +707,7 @@ export default function Home() {
   )
 
   // ============ Render ============
+
   return (
     <main className="min-h-screen bg-gradient-to-b from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800">
       <div className="max-w-2xl mx-auto px-4 py-6 sm:py-10">
@@ -673,8 +715,8 @@ export default function Home() {
         {/* Header */}
         <div className="flex items-center justify-between mb-6">
           <div>
-            <h1 className="text-2xl sm:text-3xl font-bold text-slate-800 dark:text-slate-100">🔬 Research Agent</h1>
-            <p className="text-sm text-slate-500 dark:text-slate-400">Multi-model AI with web search</p>
+            <h1 className="text-2xl sm:text-3xl font-bold text-slate-800 dark:text-slate-100">🔬 Eachie</h1>
+            <p className="text-sm text-slate-500 dark:text-slate-400">Multi-model AI research</p>
           </div>
           <div className="flex items-center gap-2">
             <button onClick={() => setShowHelp(true)} className="p-2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 rounded-lg hover:bg-slate-200 dark:hover:bg-slate-700">
@@ -742,13 +784,6 @@ export default function Home() {
                       recording={isRecording}
                       onClick={isRecording ? stopRecording : startRecording} 
                     />
-                    
-                    <Pill 
-                      icon="⚡" 
-                      label="Deep" 
-                      active={isDeepMode}
-                      onClick={() => setIsDeepMode(!isDeepMode)} 
-                    />
                   </div>
                   
                   <button
@@ -768,7 +803,7 @@ export default function Home() {
 
         {/* Clarifying Questions */}
         {stage === 'clarifying' && (
-          <form onSubmit={handleAnswersSubmit} className="space-y-4">
+          <form onSubmit={handleAnswersSubmit}>
             <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden">
               <div className="p-3 bg-blue-50 dark:bg-blue-900/20 border-b border-blue-100 dark:border-blue-800">
                 <p className="text-sm text-blue-700 dark:text-blue-300">💬 Quick context for better results (optional)</p>
@@ -777,10 +812,13 @@ export default function Home() {
                 {clarifyingQuestions.map((q, i) => (
                   <div key={i}>
                     <label className="block text-sm font-medium text-slate-700 dark:text-slate-200 mb-1">{i + 1}. {q}</label>
-                    <input type="text" value={answers[i]}
+                    <input 
+                      type="text" 
+                      value={answers[i]}
                       onChange={(e) => { const a = [...answers]; a[i] = e.target.value; setAnswers(a) }}
                       placeholder="Optional" 
-                      className="w-full px-3 py-2 border border-slate-200 dark:border-slate-600 rounded-lg text-sm bg-white dark:bg-slate-900 dark:text-slate-100" />
+                      className="w-full px-3 py-2 border border-slate-200 dark:border-slate-600 rounded-lg text-sm bg-white dark:bg-slate-900 dark:text-slate-100" 
+                    />
                   </div>
                 ))}
               </div>
@@ -802,7 +840,7 @@ export default function Home() {
             <div className="animate-pulse">
               <div className="text-4xl mb-3">🔬</div>
               <p className="text-slate-600 dark:text-slate-300">Querying {selectedModels.length} models...</p>
-              <p className="text-sm text-slate-400 dark:text-slate-500 mt-1">{isDeepMode ? '~60 sec' : '~20 sec'}</p>
+              <p className="text-sm text-slate-400 dark:text-slate-500 mt-1">This may take several minutes</p>
             </div>
           </div>
         )}
@@ -840,11 +878,11 @@ export default function Home() {
                     {result.totalCost && <span className="text-xs text-green-600 dark:text-green-400">${result.totalCost.toFixed(4)}</span>}
                   </div>
                   <div className="prose prose-sm dark:prose-invert max-w-none">
-                    {result.synthesis.split('\n').map((para, i) => <p key={i}>{para}</p>)}
+                    <ReactMarkdown>{result.synthesis}</ReactMarkdown>
                   </div>
                 </div>
 
-                {/* Individual Responses Accordion */}
+                {/* Individual Responses */}
                 <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden">
                   <button
                     type="button"
@@ -859,7 +897,7 @@ export default function Home() {
                     <div className="border-t border-slate-200 dark:border-slate-700 p-4 space-y-4">
                       {result.responses.map((response, i) => (
                         <div key={i} className="border-l-4 border-slate-200 dark:border-slate-600 pl-4">
-                          <div className="flex items-center justify-between mb-2">
+                          <div className="flex items-center justify-between mb-2 flex-wrap gap-2">
                             <div className="flex items-center gap-2">
                               <h4 className="font-medium text-sm text-slate-700 dark:text-slate-200">
                                 {response.success ? '✓' : '✗'} {response.model}
@@ -871,7 +909,7 @@ export default function Home() {
                           </div>
                           {response.success ? (
                             <div className="text-sm text-slate-600 dark:text-slate-300 prose prose-sm dark:prose-invert max-w-none">
-                              {response.content.split('\n').map((para, j) => <p key={j}>{para}</p>)}
+                              <ReactMarkdown>{response.content}</ReactMarkdown>
                             </div>
                           ) : (
                             <p className="text-sm text-red-600 dark:text-red-400">Error: {response.error}</p>
@@ -900,7 +938,7 @@ export default function Home() {
                       💾 Download
                     </button>
                     <button type="button" onClick={startNew} className="text-sm text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200">
-                      ← New Research
+                      ← New
                     </button>
                   </div>
                   <button type="submit" disabled={isLoading || !followUpQuery.trim()}

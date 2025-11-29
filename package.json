@@ -1,6 +1,6 @@
 {
-  "name": "research-agent",
-  "version": "0.1.0",
+  "name": "eachie",
+  "version": "1.0.0",
   "private": true,
   "scripts": {
     "dev": "next dev",
@@ -16,7 +16,8 @@
     "react-dom": "^19.0.0",
     "zod": "^3.23.0",
     "jszip": "^3.10.1",
-    "@tailwindcss/typography": "^0.5.15"
+    "@tailwindcss/typography": "^0.5.15",
+    "react-markdown": "^9.0.0"
   },
   "devDependencies": {
     "@types/node": "^22.0.0",

@@ -2,8 +2,8 @@ import type { Metadata } from 'next'
 import './globals.css'
 
 export const metadata: Metadata = {
-  title: 'Research Agent',
-  description: 'Multi-model AI research with web search',
+  title: 'Eachie - Multi-Model AI Research',
+  description: 'Query multiple AI models simultaneously and get synthesized insights with web search',
   icons: {
     icon: [
       { url: '/favicon.ico', sizes: 'any' },

@@ -10,6 +10,7 @@ export async function POST(request: Request) {
     const service = formData.get('service') as string || 'openai'
     const context = formData.get('context') as string || ''
     const userApiKey = formData.get('apiKey') as string || ''
+    const byokMode = formData.get('byokMode') === 'true'
     
     if (!audioBlob) {
       return NextResponse.json({ error: 'No audio provided' }, { status: 400 })
@@ -19,9 +20,9 @@ export async function POST(request: Request) {
     let transcriptionText = ''
     
     if (service === 'groq') {
-      const groqKey = userApiKey || process.env.GROQ_API_KEY
+      const groqKey = userApiKey || (byokMode ? undefined : process.env.GROQ_API_KEY)
       if (!groqKey) {
-        return NextResponse.json({ error: 'Groq API key not configured. Add it in Settings or set GROQ_API_KEY server-side.' }, { status: 500 })
+        return NextResponse.json({ error: 'Groq API key required. Please add it in Settings.' }, { status: 500 })
       }
       
       const groqFormData = new FormData()
@@ -44,9 +45,9 @@ export async function POST(request: Request) {
       transcriptionText = result.text
       
     } else if (service === 'openai') {
-      const openaiKey = userApiKey || process.env.OPENAI_API_KEY
+      const openaiKey = userApiKey || (byokMode ? undefined : process.env.OPENAI_API_KEY)
       if (!openaiKey) {
-        return NextResponse.json({ error: 'OpenAI API key not configured. Add it in Settings or set OPENAI_API_KEY server-side.' }, { status: 500 })
+        return NextResponse.json({ error: 'OpenAI API key required. Please add it in Settings.' }, { status: 500 })
       }
       
       const openaiFormData = new FormData()
@@ -69,9 +70,9 @@ export async function POST(request: Request) {
       transcriptionText = result.text
       
     } else if (service === 'deepgram') {
-      const deepgramKey = userApiKey || process.env.DEEPGRAM_API_KEY
+      const deepgramKey = userApiKey || (byokMode ? undefined : process.env.DEEPGRAM_API_KEY)
       if (!deepgramKey) {
-        return NextResponse.json({ error: 'Deepgram API key not configured. Add it in Settings or set DEEPGRAM_API_KEY server-side.' }, { status: 500 })
+        return NextResponse.json({ error: 'Deepgram API key required. Please add it in Settings.' }, { status: 500 })
       }
       
       const response = await fetch('https://api.deepgram.com/v1/listen?model=nova-2&smart_format=true', {

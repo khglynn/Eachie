@@ -7,15 +7,18 @@ export const maxDuration = 30
 
 export async function POST(request: NextRequest) {
   try {
-    const { query, apiKey } = await request.json()
+    const { query, apiKey, byokMode } = await request.json()
 
     if (!query) {
       return NextResponse.json({ error: 'Query is required' }, { status: 400 })
     }
 
-    const openrouter = createOpenRouter({
-      apiKey: apiKey || process.env.OPENROUTER_API_KEY!,
-    })
+    const key = apiKey || (byokMode ? undefined : process.env.OPENROUTER_API_KEY)
+    if (!key) {
+      return NextResponse.json({ questions: [] }) // Skip clarifying in BYOK without key
+    }
+
+    const openrouter = createOpenRouter({ apiKey: key })
 
     const result = await generateText({
       model: openrouter('anthropic/claude-haiku-4.5'),

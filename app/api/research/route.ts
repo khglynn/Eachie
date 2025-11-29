@@ -1,13 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { runResearch, ResearchImage } from '@/lib/research'
+import { runResearch } from '@/lib/research'
 
 export const runtime = 'nodejs'
-export const maxDuration = 120
+export const maxDuration = 800 // Fluid compute allows up to 800s on Pro
 
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
-    const { query, images, mode, modelIds, orchestratorId, apiKey } = body
+    const { query, images, modelIds, orchestratorId, apiKey, byokMode } = body
 
     if (!query) {
       return NextResponse.json({ error: 'Query is required' }, { status: 400 })
@@ -16,10 +16,10 @@ export async function POST(request: NextRequest) {
     const result = await runResearch({
       query,
       images,
-      mode: mode as 'quick' | 'deep',
       modelIds,
       orchestratorId,
-      apiKey
+      apiKey,
+      byokMode
     })
 
     return NextResponse.json(result)
