@@ -932,19 +932,22 @@ export default function Home() {
                   className="w-full p-4 text-base resize-y border-0 focus:ring-0 focus:outline-none placeholder:text-slate-400 dark:placeholder:text-slate-500 min-h-[100px] bg-transparent dark:text-slate-100"
                   disabled={isLoading}
                 />
-                <div className="border-t border-slate-100 dark:border-slate-700 p-3 bg-slate-50 dark:bg-slate-900 flex items-center justify-between gap-2">
-                  <div className="flex items-center gap-3">
-                    <button type="button" onClick={downloadZip} className="text-sm text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200">
-                      💾 Download
-                    </button>
-                    <button type="button" onClick={startNew} className="text-sm text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200">
-                      ← New
+                <div className="border-t border-slate-100 dark:border-slate-700 p-3 bg-slate-50 dark:bg-slate-900 space-y-3">
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="flex items-center gap-3">
+                      <button type="button" onClick={downloadZip} className="text-sm text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200">
+                        💾 Download
+                      </button>
+                      <button type="button" onClick={startNew} className="text-sm text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200">
+                        ← New
+                      </button>
+                    </div>
+                    <button type="submit" disabled={isLoading || !followUpQuery.trim()}
+                      className="px-5 py-2 bg-blue-600 dark:bg-blue-500 text-white rounded-lg font-medium hover:bg-blue-700 disabled:opacity-50 text-sm">
+                      {isLoading ? '⏳' : 'Follow-up'}
                     </button>
                   </div>
-                  <button type="submit" disabled={isLoading || !followUpQuery.trim()}
-                    className="px-5 py-2 bg-blue-600 dark:bg-blue-500 text-white rounded-lg font-medium hover:bg-blue-700 disabled:opacity-50 text-sm">
-                    {isLoading ? '⏳' : 'Follow-up'}
-                  </button>
+                  <ModelAccordion />
                 </div>
               </div>
             </form>
