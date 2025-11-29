@@ -228,12 +228,12 @@ export async function runResearch(request: ResearchRequest): Promise<ResearchRes
         
         // Add reasoning configuration based on model type
         if (model.reasoning === 'enabled') {
-          // Grok Fast: enable reasoning
+          // Grok Fast: enable reasoning (boolean parameter)
           options.experimental_providerMetadata = {
             openrouter: { reasoning: { enabled: true } }
           }
         } else if (model.reasoning === 'low' || model.reasoning === 'high') {
-          // OpenAI reasoning models: set effort level
+          // OpenAI/Anthropic reasoning models: set effort level
           options.experimental_providerMetadata = {
             openrouter: { reasoning: { effort: model.reasoning } }
           }
