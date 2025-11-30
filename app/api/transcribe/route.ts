@@ -11,6 +11,7 @@ export async function POST(request: Request) {
     const context = formData.get('context') as string || ''
     const userApiKey = formData.get('apiKey') as string || ''
     const byokMode = formData.get('byokMode') === 'true'
+    const forceBYOK = process.env.FORCE_BYOK === 'true'
     
     if (!audioBlob) {
       return NextResponse.json({ error: 'No audio provided' }, { status: 400 })
@@ -20,7 +21,7 @@ export async function POST(request: Request) {
     let transcriptionText = ''
     
     if (service === 'groq') {
-      const groqKey = userApiKey || (byokMode ? undefined : process.env.GROQ_API_KEY)
+      const groqKey = userApiKey || (byokMode || forceBYOK ? undefined : process.env.GROQ_API_KEY)
       if (!groqKey) {
         return NextResponse.json({ error: 'Groq API key required. Please add it in Settings.' }, { status: 500 })
       }
@@ -45,7 +46,7 @@ export async function POST(request: Request) {
       transcriptionText = result.text
       
     } else if (service === 'openai') {
-      const openaiKey = userApiKey || (byokMode ? undefined : process.env.OPENAI_API_KEY)
+      const openaiKey = userApiKey || (byokMode || forceBYOK ? undefined : process.env.OPENAI_API_KEY)
       if (!openaiKey) {
         return NextResponse.json({ error: 'OpenAI API key required. Please add it in Settings.' }, { status: 500 })
       }
@@ -70,7 +71,7 @@ export async function POST(request: Request) {
       transcriptionText = result.text
       
     } else if (service === 'deepgram') {
-      const deepgramKey = userApiKey || (byokMode ? undefined : process.env.DEEPGRAM_API_KEY)
+      const deepgramKey = userApiKey || (byokMode || forceBYOK ? undefined : process.env.DEEPGRAM_API_KEY)
       if (!deepgramKey) {
         return NextResponse.json({ error: 'Deepgram API key required. Please add it in Settings.' }, { status: 500 })
       }

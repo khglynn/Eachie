@@ -73,14 +73,14 @@ const MODEL_OPTIONS: ModelOption[] = [
   
   // X.AI
   { id: 'x-ai/grok-4:online', name: 'Grok 4', description: 'Creative real-time', provider: 'X.AI', cost: 2 },
-  { id: 'x-ai/grok-4.1-fast:online', name: 'Grok Fast (thinking)', description: 'Fast with reasoning', provider: 'X.AI', cost: 2 },
+  { id: 'x-ai/grok-4.1-fast', name: 'Grok Fast (thinking)', description: 'Fast with reasoning', provider: 'X.AI', cost: 2 },
   
   // Others
   { id: 'deepseek/deepseek-r1:online', name: 'DeepSeek R1', description: 'Open reasoning champ', provider: 'DeepSeek', cost: 1 },
   { id: 'qwen/qwen3-235b-a22b:online', name: 'Qwen3-Max', description: 'Multilingual creative', provider: 'Alibaba', cost: 2 },
   { id: 'moonshotai/kimi-k2:online', name: 'Kimi K2', description: 'Long-context master', provider: 'Moonshot', cost: 2 },
   { id: 'meta-llama/llama-4-maverick:online', name: 'Llama 4 Maverick', description: 'Open multimodal', provider: 'Meta', cost: 0 },
-  { id: 'minimax/minimax-m1-80k:online', name: 'MiniMax M1', description: 'Extended context', provider: 'MiniMax', cost: 2 },
+  { id: 'minimax/minimax-m1', name: 'MiniMax M1', description: 'Extended context', provider: 'MiniMax', cost: 2 },
 ]
 
 const ORCHESTRATOR_OPTIONS = [
@@ -145,10 +145,13 @@ export default function Home() {
   
   const fileInputRef = useRef<HTMLInputElement>(null)
 
-  // Check for ?byok=true URL parameter
+  // Check for ?byok=true URL parameter OR server-forced BYOK
   useEffect(() => {
     const params = new URLSearchParams(window.location.search)
-    setByokMode(params.get('byok') === 'true')
+    const urlByok = params.get('byok') === 'true'
+    setByokMode(urlByok)
+    
+    // Also check if server forces BYOK (will show in error if so)
   }, [])
 
   // Load settings from localStorage
@@ -834,8 +837,8 @@ export default function Home() {
           </form>
         )}
 
-        {/* Research Loading */}
-        {stage === 'research' && isLoading && (
+        {/* Research Loading - only show for initial query, not follow-ups */}
+        {stage === 'research' && isLoading && conversationHistory.length === 0 && (
           <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 p-8 text-center">
             <div className="animate-pulse">
               <div className="text-4xl mb-3">🔬</div>
@@ -921,6 +924,16 @@ export default function Home() {
                 </div>
               </div>
             ))}
+
+            {/* Loading indicator for follow-ups */}
+            {isLoading && (
+              <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-3 mb-4">
+                <div className="flex items-center gap-2">
+                  <div className="animate-spin text-lg">⏳</div>
+                  <p className="text-sm text-blue-700 dark:text-blue-300">Processing follow-up with {selectedModels.length} models...</p>
+                </div>
+              </div>
+            )}
 
             {/* Follow-up Form */}
             <form onSubmit={handleFollowUp} className="mt-6">

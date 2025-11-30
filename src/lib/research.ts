@@ -86,16 +86,16 @@ export const ALL_MODELS: ModelConfig[] = [
   { id: 'perplexity/sonar-deep-research', name: 'Perplexity Deep', description: 'Exhaustive research', provider: 'Perplexity', supportsVision: false, cost: 3 },
   { id: 'perplexity/sonar-pro', name: 'Perplexity Sonar', description: 'Fast search-native', provider: 'Perplexity', supportsVision: false, cost: 2 },
   
-  // X.AI - Grok Fast with reasoning enabled
+  // X.AI - Grok models
   { id: 'x-ai/grok-4:online', name: 'Grok 4', description: 'Creative real-time', provider: 'X.AI', supportsVision: true, cost: 2 },
-  { id: 'x-ai/grok-4.1-fast:online', name: 'Grok Fast (thinking)', description: 'Fast with reasoning', provider: 'X.AI', supportsVision: true, cost: 2, reasoning: 'enabled' },
+  { id: 'x-ai/grok-4.1-fast', name: 'Grok Fast (thinking)', description: 'Fast with reasoning', provider: 'X.AI', supportsVision: true, cost: 2, reasoning: 'enabled' },
   
   // Others
   { id: 'deepseek/deepseek-r1:online', name: 'DeepSeek R1', description: 'Open reasoning champ', provider: 'DeepSeek', supportsVision: false, cost: 1 },
   { id: 'qwen/qwen3-235b-a22b:online', name: 'Qwen3-Max', description: 'Multilingual creative', provider: 'Alibaba', supportsVision: false, cost: 2 },
   { id: 'moonshotai/kimi-k2:online', name: 'Kimi K2', description: 'Long-context master', provider: 'Moonshot', supportsVision: false, cost: 2 },
   { id: 'meta-llama/llama-4-maverick:online', name: 'Llama 4 Maverick', description: 'Open multimodal', provider: 'Meta', supportsVision: true, cost: 0 },
-  { id: 'minimax/minimax-m1-80k:online', name: 'MiniMax M1', description: 'Extended context', provider: 'MiniMax', supportsVision: false, cost: 2 },
+  { id: 'minimax/minimax-m1', name: 'MiniMax M1', description: 'Extended context', provider: 'MiniMax', supportsVision: false, cost: 2 },
 ]
 
 /** Default model selection for new users */
@@ -132,12 +132,12 @@ const MODEL_PRICING: Record<string, { input: number; output: number }> = {
   'perplexity/sonar-deep-research': { input: 3, output: 15 },
   'perplexity/sonar-pro': { input: 1, output: 5 },
   'x-ai/grok-4:online': { input: 1, output: 5 },
-  'x-ai/grok-4.1-fast:online': { input: 0.5, output: 2 },
+  'x-ai/grok-4.1-fast': { input: 0.5, output: 2 },
   'deepseek/deepseek-r1:online': { input: 0.20, output: 4.50 },
   'qwen/qwen3-235b-a22b:online': { input: 0.30, output: 1.49 },
   'moonshotai/kimi-k2:online': { input: 1, output: 5 },
   'meta-llama/llama-4-maverick:online': { input: 0, output: 0 },
-  'minimax/minimax-m1-80k:online': { input: 0.50, output: 2 },
+  'minimax/minimax-m1': { input: 0.40, output: 2.20 },
 }
 
 function calculateCost(modelId: string, usage?: ModelResponse['usage']): number {
@@ -175,8 +175,11 @@ FORMAT:
 export async function runResearch(request: ResearchRequest): Promise<ResearchResult> {
   const startTime = Date.now()
   
+  // Check if server is in BYOK-only mode
+  const forceBYOK = process.env.FORCE_BYOK === 'true'
+  
   // Validate API key in BYOK mode
-  const apiKey = request.apiKey || (request.byokMode ? undefined : process.env.OPENROUTER_API_KEY)
+  const apiKey = request.apiKey || (request.byokMode || forceBYOK ? undefined : process.env.OPENROUTER_API_KEY)
   if (!apiKey) {
     throw new Error('API key required. Please add your OpenRouter key in Settings.')
   }

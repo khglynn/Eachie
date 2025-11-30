@@ -13,7 +13,8 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Query is required' }, { status: 400 })
     }
 
-    const key = apiKey || (byokMode ? undefined : process.env.OPENROUTER_API_KEY)
+    const forceBYOK = process.env.FORCE_BYOK === 'true'
+    const key = apiKey || (byokMode || forceBYOK ? undefined : process.env.OPENROUTER_API_KEY)
     if (!key) {
       return NextResponse.json({ questions: [] }) // Skip clarifying in BYOK without key
     }
