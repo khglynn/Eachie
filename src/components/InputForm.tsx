@@ -113,7 +113,7 @@ export function InputForm({
   selectedModels,
   onToggleModel,
   placeholder = 'What should we eachsearch?',
-  submitLabel = 'Research',
+  submitLabel = 'Eachsearch',
   isFollowUp = false,
   sessionPrompt,
   defaultPrompt = '',
