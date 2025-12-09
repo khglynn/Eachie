@@ -574,7 +574,7 @@ export default function Home() {
       <div className="max-w-2xl mx-auto px-4 py-6 sm:py-10">
         {/* ---- Header ---- */}
         <div className="flex items-center justify-between mb-6">
-          <div className="flex items-center gap-2">
+          <div className="flex items-end gap-0">
             {/* Chalk wordmark */}
             <img
               src="/eachie-wordmark.png"
@@ -583,11 +583,11 @@ export default function Home() {
               loading="eager"
               role="img"
             />
-            {/* Spider mascot - small, to the right */}
+            {/* Spider mascot - like a period at the end */}
             <img
               src="/eachie-spider.png"
               alt="Eachie spider mascot"
-              className="h-5 sm:h-6 w-auto object-contain"
+              className="h-4 sm:h-5 w-auto object-contain mb-1 sm:mb-1.5"
               loading="eager"
               role="img"
             />
@@ -764,7 +764,7 @@ export default function Home() {
         )}
 
         {/* ---- Footer ---- */}
-        <footer className="mt-12 pt-6 border-t border-paper-divider text-xs text-paper-muted flex items-center justify-between">
+        <footer className="mt-12 pt-6 text-xs text-paper-muted flex items-center justify-between">
           <div>
             <a href="/terms" className="hover:text-paper-accent">Terms</a>
             <span className="mx-2">·</span>
