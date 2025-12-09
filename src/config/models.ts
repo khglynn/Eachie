@@ -15,6 +15,10 @@ import type { ModelOption, OrchestratorOption, TranscriptionService, Settings } 
 // All have web search enabled via OpenRouter's :online suffix.
 // ============================================================
 
+/**
+ * Blended cost = (0.25 × input) + (0.75 × output) per 1M tokens
+ * Assumes typical 3:1 output:input ratio for research queries.
+ */
 export const MODEL_OPTIONS: ModelOption[] = [
   // ---- Anthropic ----
   {
@@ -22,7 +26,7 @@ export const MODEL_OPTIONS: ModelOption[] = [
     name: 'Claude Opus 4.5',
     description: 'Top reasoning & writing',
     provider: 'Anthropic',
-    cost: 5,
+    blendedCost: 60.0, // $15 in, $75 out
     supportsVision: true,
   },
   {
@@ -30,7 +34,7 @@ export const MODEL_OPTIONS: ModelOption[] = [
     name: 'Claude Sonnet 4.5',
     description: 'Best all-rounder',
     provider: 'Anthropic',
-    cost: 3,
+    blendedCost: 12.0, // $3 in, $15 out
     supportsVision: true,
   },
   {
@@ -38,7 +42,7 @@ export const MODEL_OPTIONS: ModelOption[] = [
     name: 'Claude Haiku 4.5',
     description: 'Fast & economical',
     provider: 'Anthropic',
-    cost: 1,
+    blendedCost: 1.0, // $0.25 in, $1.25 out
     supportsVision: true,
   },
 
@@ -48,7 +52,7 @@ export const MODEL_OPTIONS: ModelOption[] = [
     name: 'GPT-5.1 (high)',
     description: 'Deep reasoning',
     provider: 'OpenAI',
-    cost: 4,
+    blendedCost: 7.81, // $1.25 in, $10 out
     supportsVision: true,
     reasoning: 'high',
   },
@@ -57,7 +61,7 @@ export const MODEL_OPTIONS: ModelOption[] = [
     name: 'o3 (high)',
     description: 'Top reasoning model',
     provider: 'OpenAI',
-    cost: 5,
+    blendedCost: 32.5, // $10 in, $40 out
     supportsVision: false,
     reasoning: 'high',
   },
@@ -66,7 +70,7 @@ export const MODEL_OPTIONS: ModelOption[] = [
     name: 'o3-mini (low)',
     description: 'STEM-focused, efficient',
     provider: 'OpenAI',
-    cost: 2,
+    blendedCost: 4.69, // $0.75 in, $6 out
     supportsVision: false,
     reasoning: 'low',
   },
@@ -77,7 +81,7 @@ export const MODEL_OPTIONS: ModelOption[] = [
     name: 'Gemini 3 Pro',
     description: 'Top multimodal',
     provider: 'Google',
-    cost: 3,
+    blendedCost: 8.13, // $2.5 in, $10 out
     supportsVision: true,
   },
   {
@@ -85,7 +89,7 @@ export const MODEL_OPTIONS: ModelOption[] = [
     name: 'Gemini 2.5 Pro',
     description: 'High-end creative',
     provider: 'Google',
-    cost: 3,
+    blendedCost: 4.06, // $1.25 in, $5 out
     supportsVision: true,
   },
   {
@@ -93,7 +97,7 @@ export const MODEL_OPTIONS: ModelOption[] = [
     name: 'Gemini 2.5 Flash',
     description: 'Built-in thinking',
     provider: 'Google',
-    cost: 1,
+    blendedCost: 0.49, // $0.15 in, $0.6 out
     supportsVision: true,
   },
   {
@@ -101,7 +105,7 @@ export const MODEL_OPTIONS: ModelOption[] = [
     name: 'Gemini 2.0 Flash',
     description: 'Fastest & cheapest',
     provider: 'Google',
-    cost: 0,
+    blendedCost: 0.24, // $0.075 in, $0.3 out
     supportsVision: true,
   },
 
@@ -111,7 +115,7 @@ export const MODEL_OPTIONS: ModelOption[] = [
     name: 'Perplexity Deep',
     description: 'Exhaustive research',
     provider: 'Perplexity',
-    cost: 3,
+    blendedCost: 12.0, // $3 in, $15 out
     supportsVision: false,
   },
   {
@@ -119,7 +123,7 @@ export const MODEL_OPTIONS: ModelOption[] = [
     name: 'Perplexity Sonar',
     description: 'Fast search-native',
     provider: 'Perplexity',
-    cost: 2,
+    blendedCost: 4.0, // $1 in, $5 out
     supportsVision: false,
   },
 
@@ -129,7 +133,7 @@ export const MODEL_OPTIONS: ModelOption[] = [
     name: 'Grok 4',
     description: 'Creative real-time',
     provider: 'X.AI',
-    cost: 2,
+    blendedCost: 4.0, // $1 in, $5 out
     supportsVision: true,
   },
   {
@@ -137,7 +141,7 @@ export const MODEL_OPTIONS: ModelOption[] = [
     name: 'Grok Fast (thinking)',
     description: 'Fast with reasoning',
     provider: 'X.AI',
-    cost: 2,
+    blendedCost: 1.63, // $0.5 in, $2 out
     supportsVision: true,
     reasoning: 'enabled',
   },
@@ -148,7 +152,7 @@ export const MODEL_OPTIONS: ModelOption[] = [
     name: 'DeepSeek R1',
     description: 'Open reasoning champ',
     provider: 'DeepSeek',
-    cost: 1,
+    blendedCost: 3.43, // $0.2 in, $4.5 out
     supportsVision: false,
   },
   {
@@ -156,7 +160,7 @@ export const MODEL_OPTIONS: ModelOption[] = [
     name: 'Qwen3-Max',
     description: 'Multilingual creative',
     provider: 'Alibaba',
-    cost: 2,
+    blendedCost: 1.19, // $0.3 in, $1.49 out
     supportsVision: false,
   },
   {
@@ -164,7 +168,7 @@ export const MODEL_OPTIONS: ModelOption[] = [
     name: 'Kimi K2',
     description: 'Long-context master',
     provider: 'Moonshot',
-    cost: 2,
+    blendedCost: 4.0, // $1 in, $5 out
     supportsVision: false,
   },
   {
@@ -172,7 +176,7 @@ export const MODEL_OPTIONS: ModelOption[] = [
     name: 'Llama 4 Maverick',
     description: 'Open multimodal',
     provider: 'Meta',
-    cost: 0,
+    blendedCost: 0, // Free
     supportsVision: true,
   },
   {
@@ -180,7 +184,7 @@ export const MODEL_OPTIONS: ModelOption[] = [
     name: 'MiniMax M1',
     description: 'Extended context',
     provider: 'MiniMax',
-    cost: 2,
+    blendedCost: 1.75, // $0.4 in, $2.2 out
     supportsVision: false,
   },
 ]
@@ -232,15 +236,15 @@ export const ORCHESTRATOR_OPTIONS: OrchestratorOption[] = [
 ]
 
 // ============================================================
-// TRANSCRIPTION SERVICES
-// Voice-to-text options for the voice input feature.
+// TRANSCRIPTION SERVICE
+// Voice-to-text via OpenAI Whisper.
 // ============================================================
 
-export const TRANSCRIPTION_SERVICES: TranscriptionService[] = [
-  { id: 'openai', name: 'OpenAI Whisper', key: 'openaiKey' },
-  { id: 'deepgram', name: 'Deepgram Nova-2', key: 'deepgramKey' },
-  { id: 'groq', name: 'Groq Whisper', key: 'groqKey' },
-]
+export const TRANSCRIPTION_SERVICE: TranscriptionService = {
+  id: 'openai',
+  name: 'OpenAI Whisper',
+  key: 'openaiKey',
+}
 
 // ============================================================
 // DEFAULTS
@@ -267,17 +271,14 @@ export const DEFAULT_ORCHESTRATOR = 'anthropic/claude-sonnet-4.5'
 export const DEFAULT_SETTINGS: Settings = {
   openrouterKey: '',
   openaiKey: '',
-  deepgramKey: '',
-  groqKey: '',
   orchestrator: DEFAULT_ORCHESTRATOR,
-  transcriptionService: 'openai',
   hiddenModels: [],
 }
 
 /**
  * Maximum number of models that can be selected at once.
  */
-export const MAX_SELECTED_MODELS = 8
+export const MAX_SELECTED_MODELS = 12
 
 /**
  * Maximum number of images that can be attached.

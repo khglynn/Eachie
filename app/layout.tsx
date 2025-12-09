@@ -3,7 +3,7 @@ import './globals.css'
 
 export const metadata: Metadata = {
   title: 'Eachie - Multi-Model AI Research',
-  description: 'Query multiple AI models simultaneously and get synthesized insights with web search',
+  description: 'Search a dozen AI models at once. 🕷️',
   icons: {
     icon: [
       { url: '/favicon.ico', sizes: 'any' },

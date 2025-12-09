@@ -24,8 +24,8 @@ export interface ModelOption {
   description: string
   /** Provider name for grouping (e.g., 'Anthropic', 'OpenAI') */
   provider: string
-  /** Relative cost indicator (0-5, higher = more expensive) */
-  cost: number
+  /** Blended cost per 1M tokens (assuming 3:1 output:input ratio) */
+  blendedCost: number
   /** Whether model can process images */
   supportsVision?: boolean
   /** Reasoning configuration for thinking models */
@@ -46,6 +46,7 @@ export interface OrchestratorOption {
 
 /**
  * Voice transcription service configuration.
+ * Currently only OpenAI Whisper is supported.
  */
 export interface TranscriptionService {
   /** Service identifier */
@@ -53,7 +54,7 @@ export interface TranscriptionService {
   /** Display name */
   name: string
   /** Settings key for API key */
-  key: 'openaiKey' | 'deepgramKey' | 'groqKey'
+  key: 'openaiKey'
 }
 
 // ============================================================
@@ -260,16 +261,10 @@ export type Stage = 'input' | 'clarifying' | 'research' | 'results'
 export interface Settings {
   /** OpenRouter API key (required for BYOK mode) */
   openrouterKey: string
-  /** OpenAI key for Whisper transcription */
+  /** OpenAI key for Whisper voice transcription */
   openaiKey: string
-  /** Deepgram key for Nova-2 transcription */
-  deepgramKey: string
-  /** Groq key for Groq Whisper transcription */
-  groqKey: string
   /** Which model synthesizes responses */
   orchestrator: string
-  /** Which voice service to use */
-  transcriptionService: string
   /** Model IDs the user has hidden from selection */
   hiddenModels: string[]
 }

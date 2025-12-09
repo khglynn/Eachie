@@ -14,7 +14,6 @@ import type { Settings } from '@/types'
 import {
   MODEL_OPTIONS,
   ORCHESTRATOR_OPTIONS,
-  TRANSCRIPTION_SERVICES,
 } from '@/config/models'
 
 interface SettingsModalProps {
@@ -141,7 +140,7 @@ export function SettingsModal({ settings, onSave, onClose, byokMode }: SettingsM
                 />
               </div>
 
-              {/* OpenAI Key (for voice) */}
+              {/* OpenAI Key (for voice transcription) */}
               <div>
                 <label className="block text-xs font-medium text-slate-600 dark:text-slate-300 mb-1">
                   OpenAI (for voice)
@@ -151,34 +150,6 @@ export function SettingsModal({ settings, onSave, onClose, byokMode }: SettingsM
                   value={settings.openaiKey}
                   onChange={(e) => handleSave({ openaiKey: e.target.value })}
                   placeholder="sk-..."
-                  className="w-full px-3 py-2 text-sm border border-slate-200 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-900 dark:text-slate-100"
-                />
-              </div>
-
-              {/* Deepgram Key (for voice) */}
-              <div>
-                <label className="block text-xs font-medium text-slate-600 dark:text-slate-300 mb-1">
-                  Deepgram (for voice)
-                </label>
-                <input
-                  type="password"
-                  value={settings.deepgramKey}
-                  onChange={(e) => handleSave({ deepgramKey: e.target.value })}
-                  placeholder="..."
-                  className="w-full px-3 py-2 text-sm border border-slate-200 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-900 dark:text-slate-100"
-                />
-              </div>
-
-              {/* Groq Key (for voice) */}
-              <div>
-                <label className="block text-xs font-medium text-slate-600 dark:text-slate-300 mb-1">
-                  Groq (for voice)
-                </label>
-                <input
-                  type="password"
-                  value={settings.groqKey}
-                  onChange={(e) => handleSave({ groqKey: e.target.value })}
-                  placeholder="gsk_..."
                   className="w-full px-3 py-2 text-sm border border-slate-200 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-900 dark:text-slate-100"
                 />
               </div>
@@ -211,29 +182,6 @@ export function SettingsModal({ settings, onSave, onClose, byokMode }: SettingsM
                   <div className="text-xs text-slate-500 dark:text-slate-400">
                     {orch.description}
                   </div>
-                </button>
-              ))}
-            </div>
-          </section>
-
-          {/* Transcription Service Section */}
-          <section>
-            <h3 className="text-sm font-semibold text-slate-700 dark:text-slate-200 mb-2">
-              Voice Transcription
-            </h3>
-            <div className="flex gap-2 flex-wrap">
-              {TRANSCRIPTION_SERVICES.map((svc) => (
-                <button
-                  key={svc.id}
-                  type="button"
-                  onClick={() => handleSave({ transcriptionService: svc.id })}
-                  className={`px-3 py-1.5 rounded-full text-sm transition-colors ${
-                    settings.transcriptionService === svc.id
-                      ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300'
-                      : 'bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-200'
-                  }`}
-                >
-                  {svc.name}
                 </button>
               ))}
             </div>

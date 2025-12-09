@@ -3,101 +3,51 @@ import { NextResponse } from 'next/server'
 export const runtime = 'nodejs'
 export const maxDuration = 30
 
+/**
+ * Voice transcription endpoint using OpenAI Whisper.
+ */
 export async function POST(request: Request) {
   try {
     const formData = await request.formData()
     const audioBlob = formData.get('audio') as Blob
-    const service = formData.get('service') as string || 'openai'
     const context = formData.get('context') as string || ''
     const userApiKey = formData.get('apiKey') as string || ''
     const byokMode = formData.get('byokMode') === 'true'
     const forceBYOK = process.env.FORCE_BYOK === 'true'
-    
+
     if (!audioBlob) {
       return NextResponse.json({ error: 'No audio provided' }, { status: 400 })
     }
-    
-    const buffer = await audioBlob.arrayBuffer()
-    let transcriptionText = ''
-    
-    if (service === 'groq') {
-      const groqKey = userApiKey || (byokMode || forceBYOK ? undefined : process.env.GROQ_API_KEY)
-      if (!groqKey) {
-        return NextResponse.json({ error: 'Groq API key required. Please add it in Settings.' }, { status: 500 })
-      }
-      
-      const groqFormData = new FormData()
-      groqFormData.append('file', new Blob([buffer], { type: 'audio/webm' }), 'audio.webm')
-      groqFormData.append('model', 'whisper-large-v3')
-      if (context) groqFormData.append('prompt', context)
-      
-      const response = await fetch('https://api.groq.com/openai/v1/audio/transcriptions', {
-        method: 'POST',
-        headers: { 'Authorization': `Bearer ${groqKey}` },
-        body: groqFormData,
-      })
-      
-      if (!response.ok) {
-        const error = await response.text()
-        throw new Error(`Groq API error: ${error}`)
-      }
-      
-      const result = await response.json()
-      transcriptionText = result.text
-      
-    } else if (service === 'openai') {
-      const openaiKey = userApiKey || (byokMode || forceBYOK ? undefined : process.env.OPENAI_API_KEY)
-      if (!openaiKey) {
-        return NextResponse.json({ error: 'OpenAI API key required. Please add it in Settings.' }, { status: 500 })
-      }
-      
-      const openaiFormData = new FormData()
-      openaiFormData.append('file', new Blob([buffer], { type: 'audio/webm' }), 'audio.webm')
-      openaiFormData.append('model', 'whisper-1')
-      if (context) openaiFormData.append('prompt', context)
-      
-      const response = await fetch('https://api.openai.com/v1/audio/transcriptions', {
-        method: 'POST',
-        headers: { 'Authorization': `Bearer ${openaiKey}` },
-        body: openaiFormData,
-      })
-      
-      if (!response.ok) {
-        const error = await response.text()
-        throw new Error(`OpenAI API error: ${error}`)
-      }
-      
-      const result = await response.json()
-      transcriptionText = result.text
-      
-    } else if (service === 'deepgram') {
-      const deepgramKey = userApiKey || (byokMode || forceBYOK ? undefined : process.env.DEEPGRAM_API_KEY)
-      if (!deepgramKey) {
-        return NextResponse.json({ error: 'Deepgram API key required. Please add it in Settings.' }, { status: 500 })
-      }
-      
-      const response = await fetch('https://api.deepgram.com/v1/listen?model=nova-2&smart_format=true', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Token ${deepgramKey}`,
-          'Content-Type': 'audio/webm',
-        },
-        body: buffer,
-      })
-      
-      if (!response.ok) {
-        const error = await response.text()
-        throw new Error(`Deepgram API error: ${error}`)
-      }
-      
-      const result = await response.json()
-      transcriptionText = result.results?.channels?.[0]?.alternatives?.[0]?.transcript || ''
-    } else {
-      return NextResponse.json({ error: `Unknown transcription service: ${service}` }, { status: 400 })
+
+    const openaiKey = userApiKey || (byokMode || forceBYOK ? undefined : process.env.OPENAI_API_KEY)
+    if (!openaiKey) {
+      return NextResponse.json(
+        { error: 'OpenAI API key required for voice. Please add it in Settings.' },
+        { status: 500 }
+      )
     }
-    
-    return NextResponse.json({ text: transcriptionText })
-    
+
+    const buffer = await audioBlob.arrayBuffer()
+
+    const openaiFormData = new FormData()
+    openaiFormData.append('file', new Blob([buffer], { type: 'audio/webm' }), 'audio.webm')
+    openaiFormData.append('model', 'whisper-1')
+    if (context) openaiFormData.append('prompt', context)
+
+    const response = await fetch('https://api.openai.com/v1/audio/transcriptions', {
+      method: 'POST',
+      headers: { 'Authorization': `Bearer ${openaiKey}` },
+      body: openaiFormData,
+    })
+
+    if (!response.ok) {
+      const error = await response.text()
+      throw new Error(`OpenAI API error: ${error}`)
+    }
+
+    const result = await response.json()
+    return NextResponse.json({ text: result.text })
+
   } catch (error) {
     console.error('Transcription error:', error)
     return NextResponse.json(

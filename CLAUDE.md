@@ -42,6 +42,17 @@ Warm, clear, curious. Educational without being condescending. Eachie genuinely 
 | `/src/config/models.ts` | Model configuration |
 | `/src/lib/research.ts` | Query + synthesis logic |
 | `/src/types/index.ts` | TypeScript interfaces |
+| **`ORCHESTRATION.md`** | How the research flow works (keep updated!) |
+
+## Orchestration Reference
+
+See `ORCHESTRATION.md` for the full breakdown of:
+- What each model sees at each stage
+- Exact prompts (research, clarifying, synthesis)
+- Follow-up context handling
+- Attachment handling
+
+**Update ORCHESTRATION.md whenever prompts or flow changes.**
 
 ## Git Workflow
 

@@ -2,7 +2,7 @@
  * ModelAccordion Component
  *
  * Expandable model selector organized by provider.
- * Shows model names with cost indicators ($-$$$$).
+ * Shows model names with blended cost per 1M tokens.
  * Limits selection to MAX_SELECTED_MODELS.
  *
  * @module components/ModelAccordion
@@ -65,7 +65,12 @@ export function ModelAccordion({
 
       {/* Accordion Content - Model Grid */}
       {isExpanded && (
-        <div className="mt-2 p-3 bg-slate-50 dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 max-h-64 overflow-y-auto">
+        <div className="mt-2 p-3 bg-slate-50 dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 max-h-72 overflow-y-auto">
+          {/* Cost explanation note */}
+          <div className="text-xs text-slate-400 dark:text-slate-500 mb-2 pb-2 border-b border-slate-200 dark:border-slate-700">
+            Cost per 1M tokens (blended, assuming 3:1 output ratio)
+          </div>
+
           {PROVIDER_ORDER.map((provider) => {
             const providerModels = visibleModels.filter((m) => m.provider === provider)
             if (providerModels.length === 0) return null
@@ -83,6 +88,12 @@ export function ModelAccordion({
                     const isSelected = selectedModels.includes(model.id)
                     const isDisabled = !isSelected && atLimit
 
+                    // Format cost: show $X.XX or "free" for 0
+                    const costDisplay =
+                      model.blendedCost === 0
+                        ? 'free'
+                        : `$${model.blendedCost.toFixed(2)}`
+
                     return (
                       <button
                         key={model.id}
@@ -96,12 +107,7 @@ export function ModelAccordion({
                         }`}
                       >
                         <span>{model.name}</span>
-                        {/* Cost indicator: $ symbols based on cost level */}
-                        {model.cost > 0 && (
-                          <span className="ml-1 opacity-60">
-                            {'$'.repeat(Math.min(model.cost, 4))}
-                          </span>
-                        )}
+                        <span className="ml-1 opacity-60">{costDisplay}</span>
                       </button>
                     )
                   })}

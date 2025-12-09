@@ -47,7 +47,7 @@ export function useVoiceRecorder({
   const chunksRef = useRef<Blob[]>([])
 
   /**
-   * Sends audio blob to transcription API.
+   * Sends audio blob to OpenAI Whisper for transcription.
    */
   const transcribeAudio = useCallback(
     async (audioBlob: Blob) => {
@@ -55,18 +55,10 @@ export function useVoiceRecorder({
       try {
         const formData = new FormData()
         formData.append('audio', audioBlob)
-        formData.append('service', settings.transcriptionService)
         formData.append('context', previousContext)
 
-        // Add appropriate API key based on selected service
-        const keyMap: Record<string, string> = {
-          openai: settings.openaiKey,
-          deepgram: settings.deepgramKey,
-          groq: settings.groqKey,
-        }
-        const apiKey = keyMap[settings.transcriptionService]
-        if (apiKey) {
-          formData.append('apiKey', apiKey)
+        if (settings.openaiKey) {
+          formData.append('apiKey', settings.openaiKey)
         }
         if (byokMode) {
           formData.append('byokMode', 'true')
@@ -90,7 +82,7 @@ export function useVoiceRecorder({
         setIsTranscribing(false)
       }
     },
-    [settings, byokMode, previousContext, onTranscription, onError]
+    [settings.openaiKey, byokMode, previousContext, onTranscription, onError]
   )
 
   /**
