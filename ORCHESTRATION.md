@@ -136,6 +136,11 @@ Synthesize these AI model responses to: "[First 200 chars of query]"
 
 [...all successful models...]
 
+[Custom prompt OR default prompt below]
+```
+
+**Default Synthesis Prompt** (can be customized in Settings):
+```
 Create a synthesis that:
 1. Identifies key consensus points
 2. Highlights disagreements or unique insights
@@ -146,7 +151,7 @@ Guidelines:
 - Be substantive and specific
 ```
 
-**Source:** `/src/lib/research.ts` lines 291-302
+**Source:** `/src/lib/research.ts` lines 291-299, `/src/config/models.ts` DEFAULT_ORCHESTRATOR_PROMPT
 
 ---
 
@@ -198,7 +203,6 @@ New question: [user's follow-up query]
 **Limits:**
 - Max 4 attachments
 - 20MB per file
-- Follow-ups: attachments disabled
 - Max 12 models can be selected at once
 
 ---

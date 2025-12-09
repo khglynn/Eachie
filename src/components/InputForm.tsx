@@ -208,39 +208,35 @@ export function InputForm({
                 </>
               )}
 
-              {/* Attach pill - only show for initial query */}
-              {!isFollowUp && (
-                <>
-                  <Pill
-                    icon="📎"
-                    label={
-                      attachments.length > 0
-                        ? `${attachments.length}/${MAX_ATTACHMENTS}`
-                        : 'Attach'
-                    }
-                    active={attachments.length > 0}
-                    onClick={() => fileInputRef.current?.click()}
-                    disabled={isLoading || attachments.length >= MAX_ATTACHMENTS}
-                  />
-                  <input
-                    ref={fileInputRef}
-                    type="file"
-                    accept={acceptTypes}
-                    multiple
-                    onChange={handleFileSelect}
-                    className="hidden"
-                  />
+              {/* Attach pill */}
+              <Pill
+                icon="📎"
+                label={
+                  attachments.length > 0
+                    ? `${attachments.length}/${MAX_ATTACHMENTS}`
+                    : 'Attach'
+                }
+                active={attachments.length > 0}
+                onClick={() => fileInputRef.current?.click()}
+                disabled={isLoading || attachments.length >= MAX_ATTACHMENTS}
+              />
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept={acceptTypes}
+                multiple
+                onChange={handleFileSelect}
+                className="hidden"
+              />
 
-                  {/* Voice pill */}
-                  <Pill
-                    icon="🎤"
-                    label={isRecording ? 'Stop' : 'Voice'}
-                    recording={isRecording}
-                    onClick={isRecording ? onStopRecording : onStartRecording}
-                    disabled={isLoading}
-                  />
-                </>
-              )}
+              {/* Voice pill */}
+              <Pill
+                icon="🎤"
+                label={isRecording ? 'Stop' : 'Voice'}
+                recording={isRecording}
+                onClick={isRecording ? onStopRecording : onStartRecording}
+                disabled={isLoading}
+              />
             </div>
 
             {/* Submit button */}

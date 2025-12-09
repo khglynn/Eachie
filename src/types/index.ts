@@ -181,6 +181,8 @@ export interface ResearchRequest {
   modelIds?: string[]
   /** Which model synthesizes the responses */
   orchestratorId?: string
+  /** Custom orchestrator synthesis prompt */
+  orchestratorPrompt?: string
   /** User's OpenRouter API key (required in BYOK mode) */
   apiKey?: string
   /** True when user must provide their own API key */
@@ -267,6 +269,8 @@ export interface Settings {
   orchestrator: string
   /** Model IDs the user has hidden from selection */
   hiddenModels: string[]
+  /** Custom orchestrator synthesis prompt (uses default if empty) */
+  orchestratorPrompt?: string
 }
 
 /**

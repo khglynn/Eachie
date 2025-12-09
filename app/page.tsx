@@ -13,7 +13,7 @@
 
 'use client'
 
-import { useState, useCallback, useEffect } from 'react'
+import { useState, useCallback, useEffect, useTransition, useRef } from 'react'
 import type { Stage, ResearchResult, ModelOption, HistoryState, Attachment } from '@/types'
 import { MODEL_OPTIONS, DEFAULT_MODELS } from '@/config/models'
 import { useSettings, useVoiceRecorder, useBrowserHistory } from '@/hooks'
@@ -39,12 +39,18 @@ export default function Home() {
   const [showHelp, setShowHelp] = useState(false)
 
   // ---- Core State ----
-  const [query, setQuery] = useState('')
+  const [query, setQueryRaw] = useState('')
   const [attachments, setAttachments] = useState<Attachment[]>([])
   const [stage, setStage] = useState<Stage>('input')
   const [error, setError] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(false)
   const [attachmentErrors, setAttachmentErrors] = useState<string[]>([])
+
+  // Use transition for non-blocking query updates (fixes INP issue)
+  const [, startTransition] = useTransition()
+  const setQuery = useCallback((value: string) => {
+    startTransition(() => setQueryRaw(value))
+  }, [])
 
   // ---- Model Selection ----
   const [selectedModels, setSelectedModels] = useState<string[]>(DEFAULT_MODELS)
@@ -56,7 +62,13 @@ export default function Home() {
 
   // ---- Results ----
   const [conversationHistory, setConversationHistory] = useState<ResearchResult[]>([])
-  const [followUpQuery, setFollowUpQuery] = useState('')
+  const [followUpQuery, setFollowUpQueryRaw] = useState('')
+  const [followUpAttachments, setFollowUpAttachments] = useState<Attachment[]>([])
+
+  // Non-blocking follow-up query updates
+  const setFollowUpQuery = useCallback((value: string) => {
+    startTransition(() => setFollowUpQueryRaw(value))
+  }, [])
 
   // ---- Progress Tracking (NEW) ----
   const [completedModels, setCompletedModels] = useState<string[]>([])
@@ -117,6 +129,23 @@ export default function Home() {
     onError: (err) => setError(err),
   })
 
+  // Voice recorder for follow-up queries
+  const {
+    isRecording: isFollowUpRecording,
+    isTranscribing: isFollowUpTranscribing,
+    startRecording: startFollowUpRecording,
+    stopRecording: stopFollowUpRecording,
+  } = useVoiceRecorder({
+    settings,
+    byokMode,
+    previousContext:
+      conversationHistory.length > 0
+        ? conversationHistory[conversationHistory.length - 1].synthesis
+        : '',
+    onTranscription: (text) => setFollowUpQuery(text),
+    onError: (err) => setError(err),
+  })
+
   // ============================================================
   // ATTACHMENT HANDLING
   // ============================================================
@@ -145,6 +174,30 @@ export default function Home() {
 
   const removeAttachment = useCallback((index: number) => {
     setAttachments((prev) => prev.filter((_, i) => i !== index))
+  }, [])
+
+  // Follow-up attachment handlers
+  const handleFollowUpAttach = useCallback(
+    async (files: FileList | null) => {
+      if (!files) return
+      setAttachmentErrors([])
+
+      const result = await readFiles(files, followUpAttachments)
+
+      if (result.attachments.length > 0) {
+        setFollowUpAttachments((prev) => [...prev, ...result.attachments])
+      }
+
+      if (result.errors.length > 0) {
+        setAttachmentErrors(result.errors)
+        setTimeout(() => setAttachmentErrors([]), 5000)
+      }
+    },
+    [followUpAttachments]
+  )
+
+  const removeFollowUpAttachment = useCallback((index: number) => {
+    setFollowUpAttachments((prev) => prev.filter((_, i) => i !== index))
   }, [])
 
   // ============================================================
@@ -261,15 +314,19 @@ export default function Home() {
       enhancedQuery = `Context:\n${context}\n\nNew question: ${finalQuery}`
     }
 
+    // Use appropriate attachments based on whether this is a follow-up
+    const currentAttachments = isFollowUp ? followUpAttachments : attachments
+
     try {
       const response = await fetch('/api/research', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           query: enhancedQuery,
-          attachments: attachments.length > 0 ? attachments : undefined,
+          attachments: currentAttachments.length > 0 ? currentAttachments : undefined,
           modelIds: selectedModels,
           orchestratorId: settings.orchestrator,
+          orchestratorPrompt: settings.orchestratorPrompt || undefined,
           apiKey: settings.openrouterKey || undefined,
           byokMode,
         }),
@@ -302,6 +359,7 @@ export default function Home() {
         setAnswers([])
       } else {
         setFollowUpQuery('')
+        setFollowUpAttachments([])
       }
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Research failed'
@@ -393,6 +451,7 @@ export default function Home() {
     setConversationHistory([])
     setQuery('')
     setFollowUpQuery('')
+    setFollowUpAttachments([])
     setOriginalQuery('')
     setClarifyingQuestions([])
     setAnswers([])
@@ -545,13 +604,13 @@ export default function Home() {
                 query={followUpQuery}
                 onQueryChange={setFollowUpQuery}
                 onSubmit={handleFollowUp}
-                attachments={[]}
-                onAttach={() => {}}
-                onRemoveAttachment={() => {}}
-                isRecording={false}
-                onStartRecording={() => {}}
-                onStopRecording={() => {}}
-                isLoading={isLoading}
+                attachments={followUpAttachments}
+                onAttach={handleFollowUpAttach}
+                onRemoveAttachment={removeFollowUpAttachment}
+                isRecording={isFollowUpRecording}
+                onStartRecording={startFollowUpRecording}
+                onStopRecording={stopFollowUpRecording}
+                isLoading={isLoading || isFollowUpTranscribing}
                 visibleModels={visibleModels}
                 selectedModels={selectedModels}
                 onToggleModel={toggleModel}

@@ -14,6 +14,7 @@ import type { Settings } from '@/types'
 import {
   MODEL_OPTIONS,
   ORCHESTRATOR_OPTIONS,
+  DEFAULT_ORCHESTRATOR_PROMPT,
 } from '@/config/models'
 
 interface SettingsModalProps {
@@ -185,6 +186,32 @@ export function SettingsModal({ settings, onSave, onClose, byokMode }: SettingsM
                 </button>
               ))}
             </div>
+          </section>
+
+          {/* Synthesis Prompt Section */}
+          <section>
+            <h3 className="text-sm font-semibold text-slate-700 dark:text-slate-200 mb-2">
+              Synthesis Prompt
+            </h3>
+            <p className="text-xs text-slate-500 dark:text-slate-400 mb-3">
+              Instructions for how the orchestrator should synthesize responses.
+            </p>
+            <textarea
+              value={settings.orchestratorPrompt ?? DEFAULT_ORCHESTRATOR_PROMPT}
+              onChange={(e) => handleSave({ orchestratorPrompt: e.target.value })}
+              rows={5}
+              className="w-full px-3 py-2 text-sm border border-slate-200 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-900 dark:text-slate-100 font-mono resize-y"
+              placeholder={DEFAULT_ORCHESTRATOR_PROMPT}
+            />
+            {settings.orchestratorPrompt && settings.orchestratorPrompt !== DEFAULT_ORCHESTRATOR_PROMPT && (
+              <button
+                type="button"
+                onClick={() => handleSave({ orchestratorPrompt: '' })}
+                className="mt-2 text-xs text-blue-600 dark:text-blue-400 hover:underline"
+              >
+                Reset to default
+              </button>
+            )}
           </section>
 
           {/* Model Visibility Section */}

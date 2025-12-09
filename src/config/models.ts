@@ -216,22 +216,22 @@ export const ORCHESTRATOR_OPTIONS: OrchestratorOption[] = [
   {
     id: 'anthropic/claude-sonnet-4.5',
     name: 'Claude Sonnet 4.5',
-    description: 'Balanced & reliable',
+    description: 'Fast, clear writing',
   },
   {
     id: 'anthropic/claude-opus-4.5',
     name: 'Claude Opus 4.5',
-    description: 'Maximum quality',
+    description: 'Nuanced, thorough',
   },
   {
     id: 'openai/gpt-5.1',
     name: 'GPT-5.1',
-    description: 'Deep reasoning',
+    description: 'Structured, analytical',
   },
   {
     id: 'google/gemini-3-pro-preview',
     name: 'Gemini 3 Pro',
-    description: 'Multimodal synthesis',
+    description: 'Concise, direct',
   },
 ]
 
@@ -264,6 +264,19 @@ export const DEFAULT_MODELS = [
  * Default orchestrator for synthesis.
  */
 export const DEFAULT_ORCHESTRATOR = 'anthropic/claude-sonnet-4.5'
+
+/**
+ * Default orchestrator synthesis prompt.
+ * Uses {{QUERY}} and {{RESPONSES}} placeholders.
+ */
+export const DEFAULT_ORCHESTRATOR_PROMPT = `Create a synthesis that:
+1. Identifies key consensus points
+2. Highlights disagreements or unique insights
+3. Provides actionable takeaways
+
+Guidelines:
+- 300-500 words, use markdown formatting
+- Be substantive and specific`
 
 /**
  * Default settings for new users.

@@ -21,6 +21,7 @@ import {
   ORCHESTRATOR_OPTIONS,
   DEFAULT_MODELS,
   DEFAULT_ORCHESTRATOR,
+  DEFAULT_ORCHESTRATOR_PROMPT,
 } from '@/config/models'
 
 // Re-export types for API route convenience
@@ -288,18 +289,14 @@ export async function runResearch(request: ResearchRequest): Promise<ResearchRes
   }
 
   // ---- Synthesize Responses ----
+  const responsesBlock = successful.map((r) => `### ${r.model}\n${r.content}`).join('\n\n---\n\n')
+  const customPrompt = request.orchestratorPrompt || DEFAULT_ORCHESTRATOR_PROMPT
+
   const synthesisPrompt = `Synthesize these AI model responses to: "${request.query.slice(0, 200)}"
 
-${successful.map((r) => `### ${r.model}\n${r.content}`).join('\n\n---\n\n')}
+${responsesBlock}
 
-Create a synthesis that:
-1. Identifies key consensus points
-2. Highlights disagreements or unique insights
-3. Provides actionable takeaways
-
-Guidelines:
-- 300-500 words, use markdown formatting
-- Be substantive and specific`
+${customPrompt}`
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const orchestratorOptions: any = {

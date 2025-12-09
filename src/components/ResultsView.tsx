@@ -11,7 +11,7 @@
 
 'use client'
 
-import { useState } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import ReactMarkdown from 'react-markdown'
 import type { ResearchResult } from '@/types'
 
@@ -20,12 +20,53 @@ interface ResultsViewProps {
   conversationHistory: ResearchResult[]
 }
 
+/** Height threshold for showing expand/collapse button (in pixels) */
+const QUERY_COLLAPSE_THRESHOLD = 100
+
 /**
  * Displays the research results.
  *
  * @example
  * <ResultsView conversationHistory={conversationHistory} />
  */
+/**
+ * Collapsible query display with scroll for long content
+ */
+function QueryDisplay({ query, roundIdx }: { query: string; roundIdx: number }) {
+  const contentRef = useRef<HTMLDivElement>(null)
+  const [isExpanded, setIsExpanded] = useState(false)
+  const [needsExpansion, setNeedsExpansion] = useState(false)
+
+  // Check if content exceeds threshold
+  useEffect(() => {
+    if (contentRef.current) {
+      setNeedsExpansion(contentRef.current.scrollHeight > QUERY_COLLAPSE_THRESHOLD)
+    }
+  }, [query])
+
+  return (
+    <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg overflow-hidden">
+      <div
+        ref={contentRef}
+        className={`px-4 py-2 text-sm text-blue-800 dark:text-blue-200 whitespace-pre-wrap break-words transition-all ${
+          !isExpanded && needsExpansion ? 'max-h-24 overflow-hidden' : 'max-h-96 overflow-y-auto'
+        }`}
+      >
+        {query}
+      </div>
+      {needsExpansion && (
+        <button
+          type="button"
+          onClick={() => setIsExpanded(!isExpanded)}
+          className="w-full py-1 text-xs text-blue-600 dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-blue-900/40 border-t border-blue-200 dark:border-blue-800"
+        >
+          {isExpanded ? '▲ Show less' : '▼ Show more'}
+        </button>
+      )}
+    </div>
+  )
+}
+
 export function ResultsView({ conversationHistory }: ResultsViewProps) {
   // Track which rounds have expanded individual responses
   const [expandedRounds, setExpandedRounds] = useState<Set<number>>(new Set())
@@ -73,10 +114,8 @@ export function ResultsView({ conversationHistory }: ResultsViewProps) {
             {result.orchestrator && <span>• {result.orchestrator}</span>}
           </div>
 
-          {/* Query Display */}
-          <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg px-4 py-2 text-sm text-blue-800 dark:text-blue-200">
-            {result.query.length > 200 ? result.query.slice(0, 200) + '...' : result.query}
-          </div>
+          {/* Query Display - Full query with expand/collapse */}
+          <QueryDisplay query={result.query} roundIdx={roundIdx} />
 
           {/* Synthesis Card */}
           <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 p-4">

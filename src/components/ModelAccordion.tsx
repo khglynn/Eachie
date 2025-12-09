@@ -68,7 +68,7 @@ export function ModelAccordion({
         <div className="mt-2 p-3 bg-slate-50 dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 max-h-72 overflow-y-auto">
           {/* Cost explanation note */}
           <div className="text-xs text-slate-400 dark:text-slate-500 mb-2 pb-2 border-b border-slate-200 dark:border-slate-700">
-            Cost per 1M tokens (blended, assuming 3:1 output ratio)
+            Est. cost per 200K tokens
           </div>
 
           {PROVIDER_ORDER.map((provider) => {
@@ -88,11 +88,13 @@ export function ModelAccordion({
                     const isSelected = selectedModels.includes(model.id)
                     const isDisabled = !isSelected && atLimit
 
-                    // Format cost: show $X.XX or "free" for 0
+                    // Format cost: per 200K tokens, rounded to nearest $0.05
+                    const costPer200K = model.blendedCost / 5
+                    const roundedCost = Math.round(costPer200K / 0.05) * 0.05
                     const costDisplay =
                       model.blendedCost === 0
                         ? 'free'
-                        : `$${model.blendedCost.toFixed(2)}`
+                        : `$${roundedCost.toFixed(2)}`
 
                     return (
                       <button
