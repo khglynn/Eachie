@@ -574,20 +574,20 @@ export default function Home() {
       <div className="max-w-2xl mx-auto px-4 py-6 sm:py-10">
         {/* ---- Header ---- */}
         <div className="flex items-center justify-between mb-6">
-          <div className="flex items-center gap-3">
-            {/* Chalk spider logo - smaller, aligned to bottom */}
-            <img
-              src="/eachie-spider.png"
-              alt="Eachie - A cute chalk-drawn spider with glasses"
-              className="h-6 sm:h-8 w-auto object-contain self-end"
-              loading="eager"
-              role="img"
-            />
-            {/* Chalk wordmark - larger */}
+          <div className="flex items-center gap-2">
+            {/* Chalk wordmark */}
             <img
               src="/eachie-wordmark.png"
               alt="Eachie"
               className="h-12 sm:h-16"
+              loading="eager"
+              role="img"
+            />
+            {/* Spider mascot - small, to the right */}
+            <img
+              src="/eachie-spider.png"
+              alt="Eachie spider mascot"
+              className="h-5 sm:h-6 w-auto object-contain"
               loading="eager"
               role="img"
             />
