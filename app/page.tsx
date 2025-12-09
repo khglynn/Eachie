@@ -307,8 +307,8 @@ export default function Home() {
   }
 
   /**
-   * Runs the main research flow:
-   * 1. Query all selected models in parallel
+   * Runs the main research flow with SSE streaming:
+   * 1. Query all selected models in parallel (with real-time progress)
    * 2. Synthesize responses with orchestrator
    */
   const runFullResearch = async (finalQuery: string, isFollowUp = false) => {
@@ -326,7 +326,7 @@ export default function Home() {
     const modelNames = selectedModels
       .map((id) => MODEL_OPTIONS.find((m) => m.id === id)?.name || id)
     setCompletedModels([])
-    setPendingModels(modelNames)
+    setPendingModels([...modelNames])
 
     // Preserve query for error recovery (use finalQuery - it's the current value from ref)
     setPreservedQuery(finalQuery)
@@ -342,7 +342,8 @@ export default function Home() {
     const currentAttachments = isFollowUp ? followUpAttachments : attachments
 
     try {
-      const response = await fetch('/api/research', {
+      // Use streaming endpoint for real-time progress
+      const response = await fetch('/api/research/stream', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -361,31 +362,75 @@ export default function Home() {
         throw new Error(errText || 'Research failed')
       }
 
-      // Simulate progress (since we don't have streaming yet)
-      // In a real streaming implementation, these would update as each model responds
-      setResearchPhase('synthesizing')
-      setCompletedModels(modelNames)
-      setPendingModels([])
+      // Process SSE stream
+      const reader = response.body?.getReader()
+      const decoder = new TextDecoder()
 
-      const result: ResearchResult = await response.json()
+      if (!reader) {
+        throw new Error('No response body')
+      }
 
-      // Success! Add to history and go to results
-      setConversationHistory((prev) => [...prev, result])
-      setStage('results')
-      pushState('results')
+      let buffer = ''
+      const completed: string[] = []
 
-      // Clear form data on success
-      if (!isFollowUp) {
-        queryRef.current = ''
-        setQuery('')
-        setAttachments([])
-        setOriginalQuery('')
-        setClarifyingQuestions([])
-        setAnswers([])
-      } else {
-        followUpQueryRef.current = ''
-        setFollowUpQuery('')
-        setFollowUpAttachments([])
+      while (true) {
+        const { done, value } = await reader.read()
+        if (done) break
+
+        buffer += decoder.decode(value, { stream: true })
+
+        // Process complete events from buffer
+        const lines = buffer.split('\n')
+        buffer = lines.pop() || '' // Keep incomplete line in buffer
+
+        let eventType = ''
+        for (const line of lines) {
+          if (line.startsWith('event: ')) {
+            eventType = line.slice(7)
+          } else if (line.startsWith('data: ') && eventType) {
+            try {
+              const data = JSON.parse(line.slice(6))
+
+              if (eventType === 'model_complete') {
+                // Add to completed, remove from pending
+                completed.push(data.model)
+                setCompletedModels([...completed])
+                setPendingModels(modelNames.filter((m) => !completed.includes(m)))
+              } else if (eventType === 'synthesis_start') {
+                // All models done, synthesis starting
+                setResearchPhase('synthesizing')
+                setCompletedModels([...modelNames])
+                setPendingModels([])
+              } else if (eventType === 'complete') {
+                // Final result
+                const result: ResearchResult = data.result
+                setConversationHistory((prev) => [...prev, result])
+                setStage('results')
+                pushState('results')
+
+                // Clear form data on success
+                if (!isFollowUp) {
+                  queryRef.current = ''
+                  setQuery('')
+                  setAttachments([])
+                  setOriginalQuery('')
+                  setClarifyingQuestions([])
+                  setAnswers([])
+                } else {
+                  followUpQueryRef.current = ''
+                  setFollowUpQuery('')
+                  setFollowUpAttachments([])
+                }
+              } else if (eventType === 'error') {
+                throw new Error(data.message)
+              }
+            } catch (parseErr) {
+              // Ignore JSON parse errors for incomplete data
+              if (eventType === 'error') throw parseErr
+            }
+            eventType = ''
+          }
+        }
       }
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Research failed'
@@ -507,24 +552,32 @@ export default function Home() {
       <div className="max-w-2xl mx-auto px-4 py-6 sm:py-10">
         {/* ---- Header ---- */}
         <div className="flex items-center justify-between mb-6">
-          <div>
-            <h1 className="text-2xl sm:text-3xl font-bold text-slate-800 dark:text-slate-100">
-              🕷️ Eachie
-            </h1>
-            <p className="text-sm text-slate-500 dark:text-slate-400">
-              Multi-model AI research
-            </p>
+          <div className="flex items-center gap-3">
+            {/* Chalk spider logo with screen blend mode */}
+            <img
+              src="/favicon-96x96.png"
+              alt="Eachie spider"
+              className="w-10 h-10 sm:w-12 sm:h-12 mix-blend-screen"
+            />
+            <div>
+              <h1 className="text-2xl sm:text-3xl font-bold text-white">
+                Eachie
+              </h1>
+              <p className="text-sm text-blue-200">
+                Multi-model AI research
+              </p>
+            </div>
           </div>
           <div className="flex items-center gap-2">
             <button
               onClick={() => setShowHelp(true)}
-              className="p-2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 rounded-lg hover:bg-slate-200 dark:hover:bg-slate-700"
+              className="p-2 text-blue-200 hover:text-white rounded-lg hover:bg-white/10"
             >
               <span className="text-lg">?</span>
             </button>
             <button
               onClick={() => setShowSettings(true)}
-              className="p-2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 rounded-lg hover:bg-slate-200 dark:hover:bg-slate-700"
+              className="p-2 text-blue-200 hover:text-white rounded-lg hover:bg-white/10"
             >
               <span className="text-lg">⚙️</span>
             </button>

@@ -8,11 +8,12 @@ module.exports = {
   theme: {
     extend: {
       colors: {
-        // Architecture paper blue palette
+        // Blueprint/chalkboard blue palette
         paper: {
-          bg: '#0f1729',
-          card: '#1a2744',
-          border: '#2d4a7c',
+          bg: '#2563a8',      // Classic blueprint blue
+          card: '#1e4f7a',    // Darker card background
+          border: '#4a90c4',  // Lighter blue border
+          light: '#5ba3d9',   // Accent highlights
         },
       },
     },
