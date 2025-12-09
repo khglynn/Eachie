@@ -503,13 +503,13 @@ export default function Home() {
   }
 
   return (
-    <main className="min-h-screen bg-gradient-to-b from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800">
+    <main className="min-h-screen bg-paper-bg">
       <div className="max-w-2xl mx-auto px-4 py-6 sm:py-10">
         {/* ---- Header ---- */}
         <div className="flex items-center justify-between mb-6">
           <div>
             <h1 className="text-2xl sm:text-3xl font-bold text-slate-800 dark:text-slate-100">
-              🔬 Eachie
+              🕷️ Eachie
             </h1>
             <p className="text-sm text-slate-500 dark:text-slate-400">
               Multi-model AI research

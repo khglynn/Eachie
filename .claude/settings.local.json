@@ -18,7 +18,10 @@
       "Bash(git commit:*)",
       "Bash(git push)",
       "Bash(git checkout:*)",
-      "Bash(git push:*)"
+      "Bash(git push:*)",
+      "mcp__firecrawl__firecrawl_search",
+      "mcp__firecrawl__firecrawl_scrape",
+      "Bash(sips:*)"
     ],
     "deny": [],
     "ask": []

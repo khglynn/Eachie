@@ -50,7 +50,7 @@ export function HelpModal({ onClose, byokMode }: HelpModalProps) {
         <div className="p-6 space-y-4 text-sm text-slate-600 dark:text-slate-300">
           <section>
             <h3 className="font-semibold text-slate-800 dark:text-slate-100 mb-2">
-              🔬 What is Eachie?
+              🕷️ What is Eachie?
             </h3>
             <p>
               A multi-model AI research tool that queries multiple models simultaneously,
