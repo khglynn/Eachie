@@ -8,12 +8,12 @@ module.exports = {
   theme: {
     extend: {
       colors: {
-        // Blueprint/chalkboard blue palette
+        // Deep cyanotype/Prussian blue palette
         paper: {
-          bg: '#2563a8',      // Classic blueprint blue
-          card: '#1e4f7a',    // Darker card background
-          border: '#4a90c4',  // Lighter blue border
-          light: '#5ba3d9',   // Accent highlights
+          bg: '#0c4271',      // Deep cyanotype blue
+          card: '#0a3558',    // Darker card background
+          border: '#1a5a8a',  // Lighter blue border
+          light: '#2d7ab8',   // Accent highlights
         },
       },
     },

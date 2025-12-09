@@ -553,11 +553,11 @@ export default function Home() {
         {/* ---- Header ---- */}
         <div className="flex items-center justify-between mb-6">
           <div className="flex items-center gap-3">
-            {/* Chalk spider logo with screen blend mode */}
+            {/* Chalk spider logo (transparent background) */}
             <img
-              src="/favicon-96x96.png"
+              src="/spider-48.png"
               alt="Eachie spider"
-              className="w-10 h-10 sm:w-12 sm:h-12 mix-blend-screen"
+              className="w-10 h-10 sm:w-12 sm:h-12"
             />
             <div>
               <h1 className="text-2xl sm:text-3xl font-bold text-white">
