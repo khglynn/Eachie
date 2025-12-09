@@ -26,7 +26,7 @@ import {
   SettingsModal,
   HelpModal,
 } from '@/components'
-import { ChalkSettings, ChalkError, ChalkWarning, ChalkQuestion } from '@/components/ChalkIcons'
+import { ChalkSettings, ChalkError, ChalkWarning, ChalkQuestion, ChalkDownload, ChalkPlus } from '@/components/ChalkIcons'
 
 // ============================================================
 // MAIN COMPONENT
@@ -717,8 +717,26 @@ export default function Home() {
               />
             )}
 
+            {/* Session Actions */}
+            <div className="mt-6 flex items-center gap-3">
+              <button
+                type="button"
+                onClick={downloadZip}
+                className="text-sm text-paper-muted hover:text-paper-text inline-flex items-center gap-1"
+              >
+                <ChalkDownload size={16} /> Download
+              </button>
+              <button
+                type="button"
+                onClick={startNew}
+                className="text-sm text-paper-muted hover:text-paper-text inline-flex items-center gap-1"
+              >
+                <ChalkPlus size={16} /> New
+              </button>
+            </div>
+
             {/* Follow-up Form (always visible, just disabled during loading) */}
-            <div className="mt-6">
+            <div className="mt-4">
               <InputForm
                 query={followUpQuery}
                 onQueryChange={setFollowUpQuery}
@@ -736,8 +754,6 @@ export default function Home() {
                 placeholder="Ask a follow-up question..."
                 submitLabel={isLoading ? '⏳' : 'Follow-up'}
                 isFollowUp={true}
-                onDownload={downloadZip}
-                onStartNew={startNew}
                 sessionPrompt={sessionPrompt}
                 defaultPrompt={settings.orchestratorPrompt || DEFAULT_ORCHESTRATOR_PROMPT}
                 onSessionPromptChange={setSessionPrompt}

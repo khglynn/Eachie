@@ -181,9 +181,8 @@ export function SettingsModal({ settings, onSave, onClose, byokMode }: SettingsM
                   >
                     <div className="flex justify-between items-center">
                       <span className="font-medium text-paper-text">{orch.name}</span>
-                      <span className="text-xs text-paper-muted">{costDisplay}</span>
+                      <span className="text-xs text-paper-muted">{costDisplay} / 200K</span>
                     </div>
-                    <div className="text-xs text-paper-muted">{orch.description}</div>
                   </button>
                 )
               })}

@@ -15,7 +15,6 @@ import { useState, useRef, useEffect } from 'react'
 import ReactMarkdown from 'react-markdown'
 import type { ResearchResult } from '@/types'
 import {
-  ChalkSparkle,
   ChalkSearch,
   ChalkChat,
   ChalkCheck,
@@ -111,9 +110,9 @@ export function ResultsView({ conversationHistory }: ResultsViewProps) {
     <div className="space-y-4">
       {/* Cost Banner */}
       {cumulativeCost > 0 && (
-        <div className="bg-paper-success-muted/50 border border-paper-success/30 rounded-lg px-4 py-2 text-sm">
-          <span className="font-medium text-paper-success">Session Cost: </span>
-          <span className="text-paper-success/80">${cumulativeCost.toFixed(4)}</span>
+        <div className="bg-paper-surface/50 border border-paper-accent/30 rounded-lg px-4 py-2 text-sm">
+          <span className="font-medium text-paper-muted">Session Cost: </span>
+          <span className="text-paper-text/80">${cumulativeCost.toFixed(4)}</span>
         </div>
       )}
 
@@ -145,8 +144,7 @@ export function ResultsView({ conversationHistory }: ResultsViewProps) {
           {/* Synthesis Card */}
           <div className="bg-paper-card rounded-xl border border-paper-accent/30 p-4 chalk-frame">
             <div className="flex items-center justify-between mb-3">
-              <h3 className="font-semibold text-paper-text flex items-center gap-2">
-                <ChalkSparkle size={18} className="text-paper-warning" />
+              <h3 className="font-semibold text-paper-text">
                 Summary
               </h3>
               {result.totalCost !== undefined && result.totalCost > 0 && (

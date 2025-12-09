@@ -23,7 +23,14 @@
       "mcp__firecrawl__firecrawl_scrape",
       "Bash(sips:*)",
       "mcp__playwright__browser_navigate",
-      "mcp__playwright__browser_take_screenshot"
+      "mcp__playwright__browser_take_screenshot",
+      "Bash(osascript:*)",
+      "Bash(chmod:*)",
+      "mcp__cloudflare__ai_image_generation",
+      "Bash(grep:*)",
+      "mcp__playwright__browser_click",
+      "mcp__playwright__browser_snapshot",
+      "Bash(wc:*)"
     ],
     "deny": [],
     "ask": []

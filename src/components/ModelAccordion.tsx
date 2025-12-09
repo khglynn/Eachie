@@ -56,7 +56,7 @@ export function ModelAccordion({
       >
         <span className="flex items-center gap-2">
           <ChalkTarget size={16} />
-          <span className="font-medium">Models</span>
+          <span className="font-medium text-paper-text">Models</span>
           <span className="text-paper-muted/70">
             ({selectedModels.length}/{MAX_SELECTED_MODELS} selected)
           </span>
@@ -68,7 +68,7 @@ export function ModelAccordion({
       {isExpanded && (
         <div className="mt-2 p-3 bg-paper-card rounded-lg border border-paper-accent/30 max-h-72 overflow-y-auto">
           {/* Cost explanation note */}
-          <div className="text-xs text-paper-muted/70 mb-2 pb-2 border-b border-paper-divider">
+          <div className="text-xs text-paper-muted/70 mb-2">
             Est. cost per 200K tokens
           </div>
 

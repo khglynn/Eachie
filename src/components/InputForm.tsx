@@ -22,9 +22,7 @@ import { ModelAccordion } from './ModelAccordion'
 import {
   ChalkAttach,
   ChalkMic,
-  ChalkDownload,
   ChalkLoading,
-  ChalkPlus,
   ChalkChevronDown,
   ChalkChevronRight,
   ChalkClose,
@@ -68,12 +66,8 @@ interface InputFormProps {
   placeholder?: string
   /** Submit button text */
   submitLabel?: string
-  /** Whether this is a follow-up form (shows additional actions) */
+  /** Whether this is a follow-up form */
   isFollowUp?: boolean
-  /** Download action for follow-up form */
-  onDownload?: () => void
-  /** Start new action for follow-up form */
-  onStartNew?: () => void
   /** Per-session prompt override (null = use default) */
   sessionPrompt?: string | null
   /** Default orchestrator prompt from settings */
@@ -121,8 +115,6 @@ export function InputForm({
   placeholder = 'What would you like to research?',
   submitLabel = 'Research',
   isFollowUp = false,
-  onDownload,
-  onStartNew,
   sessionPrompt,
   defaultPrompt = '',
   onSessionPromptChange,
@@ -214,26 +206,6 @@ export function InputForm({
         <div className="border-t border-paper-divider p-3 bg-paper-card space-y-3">
           <div className="flex items-center justify-between gap-3">
             <div className="flex items-center gap-2 flex-wrap">
-              {/* Follow-up actions */}
-              {isFollowUp && onDownload && onStartNew && (
-                <>
-                  <button
-                    type="button"
-                    onClick={onDownload}
-                    className="text-sm text-paper-muted hover:text-paper-text inline-flex items-center gap-1"
-                  >
-                    <ChalkDownload size={16} /> Download
-                  </button>
-                  <button
-                    type="button"
-                    onClick={onStartNew}
-                    className="text-sm text-paper-muted hover:text-paper-text inline-flex items-center gap-1"
-                  >
-                    <ChalkPlus size={16} /> New
-                  </button>
-                </>
-              )}
-
               {/* Attach pill */}
               <Pill
                 icon={<ChalkAttach size={16} />}
@@ -302,7 +274,7 @@ export function InputForm({
                   <textarea
                     value={currentPrompt}
                     onChange={(e) => onSessionPromptChange(e.target.value)}
-                    rows={4}
+                    rows={8}
                     className="w-full px-3 py-2 text-xs border border-paper-accent/30 rounded-lg bg-paper-bg text-paper-text font-mono resize-y placeholder:text-paper-muted"
                     placeholder="Enter custom instructions for the summary..."
                   />
