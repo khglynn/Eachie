@@ -1,0 +1,543 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Chalk Loading Bar - Draw + Fill</title>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      font-family: system-ui, sans-serif;
+      background: #1a1a1a;
+      padding: 2rem;
+      max-width: 800px;
+      margin: 0 auto;
+      color: #e5e5e5;
+    }
+    h1 { margin-bottom: 0.25rem; }
+    .subtitle { color: #888; margin-bottom: 1.5rem; font-size: 0.9rem; }
+    
+    .controls {
+      background: #333;
+      padding: 1rem;
+      border-radius: 8px;
+      margin-bottom: 1.5rem;
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      flex-wrap: wrap;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+    }
+    .controls label { font-size: 0.85rem; color: #ccc; }
+    .controls input[type="range"] { width: 180px; }
+    .controls .value { 
+      background: #444; 
+      padding: 0.25rem 0.5rem; 
+      border-radius: 4px; 
+      font-family: monospace;
+      min-width: 50px;
+      text-align: center;
+    }
+    button {
+      background: #3b82f6;
+      color: white;
+      border: none;
+      padding: 0.5rem 1rem;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 0.85rem;
+    }
+    button:hover { background: #2563eb; }
+    button.secondary { background: #555; }
+    
+    .chalkboard {
+      border-radius: 10px;
+      padding: 2rem;
+      background: 
+        radial-gradient(ellipse at 20% 30%, rgba(70,70,70,0.2) 0%, transparent 50%),
+        radial-gradient(ellipse at 80% 70%, rgba(60,60,60,0.15) 0%, transparent 40%),
+        linear-gradient(180deg, #2a2a2a 0%, #1c1c1c 50%, #222 100%);
+      box-shadow: inset 0 2px 10px rgba(0,0,0,0.5);
+    }
+    
+    .chalkboard svg {
+      width: 100%;
+      height: auto;
+      display: block;
+    }
+    
+    .demo-section {
+      margin-top: 2rem;
+      padding: 1.5rem;
+      background: #252525;
+      border-radius: 8px;
+    }
+    .demo-section h2 { font-size: 1rem; margin: 0 0 0.5rem 0; color: #ccc; }
+    .demo-section p { font-size: 0.85rem; color: #888; margin: 0; }
+  </style>
+</head>
+<body>
+  <!-- Chalk texture filter -->
+  <svg style="position:absolute;width:0;height:0;">
+    <defs>
+      <filter id="chalk" x="-20%" y="-20%" width="140%" height="140%">
+        <feTurbulence type="fractalNoise" baseFrequency="0.55" numOctaves="4" seed="3" result="noise"/>
+        <feDisplacementMap in="SourceGraphic" in2="noise" scale="2" xChannelSelector="R" yChannelSelector="G"/>
+        <feGaussianBlur stdDeviation="0.3"/>
+      </filter>
+    </defs>
+  </svg>
+
+  <h1>Chalk Loading Bar</h1>
+  <p class="subtitle">Draws outlines first, then fills each block with randomized scribble</p>
+  
+  <div class="controls">
+    <label>Progress:</label>
+    <input type="range" id="progress-slider" min="0" max="100" value="0">
+    <span class="value" id="progress-value">0%</span>
+    <button onclick="animateProgress()">Animate</button>
+    <button class="secondary" onclick="stopAnimation()">Stop</button>
+    <button class="secondary" onclick="regenerate()">Regenerate</button>
+    <label style="display:flex;align-items:center;gap:0.4rem;cursor:pointer;">
+      <input type="checkbox" id="loop-toggle" checked> Loop
+    </label>
+  </div>
+  
+  <div class="chalkboard">
+    <svg id="loader-svg" viewBox="0 0 500 70"></svg>
+  </div>
+  
+  <div class="demo-section">
+    <h2>How it works</h2>
+    <p>Each block has two phases: outline draw (0-50% of block's time) then scribble fill (50-100%). 
+       Rectangles are imperfect with random corner offsets. Scribbles vary in angle, spacing, and wobble per block.</p>
+  </div>
+
+<script>
+/**
+ * CHALK LOADING BAR
+ * 
+ * This creates an animated loading bar with hand-drawn chalk aesthetic.
+ * Each block: 1) draws its outline, then 2) fills with scribble pattern.
+ * 
+ * CONFIGURATION (modify these values):
+ */
+const CONFIG = {
+  // Bar dimensions
+  barX: 20,
+  barY: 20,
+  barWidth: 460,
+  barHeight: 30,
+  
+  // Block settings
+  blockCount: 8,
+  blockGap: 6,           // Gap between blocks
+  blockPadding: 4,       // Padding inside bar
+  
+  // Chalk appearance
+  strokeColor: '#f0f0f0',
+  strokeWidth: 2.5,
+  
+  // Randomization ranges (imperfection)
+  cornerJitter: 3,       // Max random offset for rectangle corners (px)
+  scribbleAngleRange: 25, // Scribble angle varies ±this from 45° (degrees)
+  scribbleSpacingMin: 4,  // Min spacing between scribble lines
+  scribbleSpacingMax: 7,  // Max spacing between scribble lines
+  scribbleWobbleMax: 2,   // Max random wobble on scribble line endpoints
+  
+  // Animation
+  animationSpeed: 0.006   // Progress increment per frame (lower = slower)
+};
+
+// ============ HELPER FUNCTIONS ============
+
+/**
+ * Create an SVG element with attributes
+ */
+function createSvgElement(tag, attrs = {}) {
+  const el = document.createElementNS('http://www.w3.org/2000/svg', tag);
+  for (const [key, val] of Object.entries(attrs)) {
+    el.setAttribute(key, val);
+  }
+  return el;
+}
+
+/**
+ * Random number in range
+ */
+function rand(min, max) {
+  return min + Math.random() * (max - min);
+}
+
+/**
+ * Random jitter (centered around 0)
+ */
+function jitter(max) {
+  return (Math.random() - 0.5) * 2 * max;
+}
+
+/**
+ * Generate an imperfect rectangle path
+ * Each corner gets a random offset for hand-drawn look
+ */
+function createImperfectRect(x, y, w, h, cornerJitter) {
+  const j = () => jitter(cornerJitter);
+  
+  // Each corner with random offset
+  const tl = { x: x + j(), y: y + j() };
+  const tr = { x: x + w + j(), y: y + j() };
+  const br = { x: x + w + j(), y: y + h + j() };
+  const bl = { x: x + j(), y: y + h + j() };
+  
+  return `M ${tl.x} ${tl.y} L ${tr.x} ${tr.y} L ${br.x} ${br.y} L ${bl.x} ${bl.y} Z`;
+}
+
+/**
+ * Generate scribble fill lines for a rectangle
+ * Returns array of line objects with start/end points
+ */
+function createScribbleLines(x, y, w, h, config) {
+  const lines = [];
+  
+  // Random angle for this block's scribbles (around 45°)
+  const baseAngle = 45 + jitter(config.scribbleAngleRange);
+  const angleRad = baseAngle * Math.PI / 180;
+  
+  // Random spacing for this block
+  const spacing = rand(config.scribbleSpacingMin, config.scribbleSpacingMax);
+  
+  // Calculate how far we need to go to cover the rectangle
+  const diagonal = Math.sqrt(w * w + h * h);
+  
+  // Direction perpendicular to scribble angle (for spacing)
+  const perpX = Math.cos(angleRad + Math.PI / 2);
+  const perpY = Math.sin(angleRad + Math.PI / 2);
+  
+  // Direction along scribble angle
+  const dirX = Math.cos(angleRad);
+  const dirY = Math.sin(angleRad);
+  
+  // Center of rectangle
+  const cx = x + w / 2;
+  const cy = y + h / 2;
+  
+  // Generate lines across the rectangle
+  for (let offset = -diagonal; offset < diagonal; offset += spacing) {
+    // Start point (offset perpendicular to line direction)
+    const startX = cx + perpX * offset - dirX * diagonal;
+    const startY = cy + perpY * offset - dirY * diagonal;
+    
+    // End point
+    const endX = cx + perpX * offset + dirX * diagonal;
+    const endY = cy + perpY * offset + dirY * diagonal;
+    
+    // Clip line to rectangle bounds
+    const clipped = clipLineToRect(startX, startY, endX, endY, x, y, w, h);
+    
+    if (clipped) {
+      // Add wobble to endpoints
+      const wobble = config.scribbleWobbleMax;
+      lines.push({
+        x1: clipped.x1 + jitter(wobble),
+        y1: clipped.y1 + jitter(wobble),
+        x2: clipped.x2 + jitter(wobble),
+        y2: clipped.y2 + jitter(wobble)
+      });
+    }
+  }
+  
+  return lines;
+}
+
+/**
+ * Clip a line to a rectangle (Cohen-Sutherland simplified)
+ */
+function clipLineToRect(x1, y1, x2, y2, rx, ry, rw, rh) {
+  const INSIDE = 0, LEFT = 1, RIGHT = 2, BOTTOM = 4, TOP = 8;
+  
+  function code(x, y) {
+    let c = INSIDE;
+    if (x < rx) c |= LEFT;
+    else if (x > rx + rw) c |= RIGHT;
+    if (y < ry) c |= TOP;
+    else if (y > ry + rh) c |= BOTTOM;
+    return c;
+  }
+  
+  let c1 = code(x1, y1);
+  let c2 = code(x2, y2);
+  
+  while (true) {
+    if (!(c1 | c2)) {
+      return { x1, y1, x2, y2 };
+    }
+    if (c1 & c2) {
+      return null;
+    }
+    
+    const cOut = c1 ? c1 : c2;
+    let x, y;
+    
+    if (cOut & BOTTOM) {
+      x = x1 + (x2 - x1) * (ry + rh - y1) / (y2 - y1);
+      y = ry + rh;
+    } else if (cOut & TOP) {
+      x = x1 + (x2 - x1) * (ry - y1) / (y2 - y1);
+      y = ry;
+    } else if (cOut & RIGHT) {
+      y = y1 + (y2 - y1) * (rx + rw - x1) / (x2 - x1);
+      x = rx + rw;
+    } else {
+      y = y1 + (y2 - y1) * (rx - x1) / (x2 - x1);
+      x = rx;
+    }
+    
+    if (cOut === c1) {
+      x1 = x; y1 = y;
+      c1 = code(x1, y1);
+    } else {
+      x2 = x; y2 = y;
+      c2 = code(x2, y2);
+    }
+  }
+}
+
+// ============ BLOCK CLASS ============
+
+class ChalkBlock {
+  constructor(x, y, w, h, config) {
+    this.x = x;
+    this.y = y;
+    this.w = w;
+    this.h = h;
+    this.config = config;
+    
+    // Generate unique randomized elements for this block
+    this.generate();
+  }
+  
+  generate() {
+    // Create imperfect outline path
+    this.outlinePath = createImperfectRect(
+      this.x, this.y, this.w, this.h, 
+      this.config.cornerJitter
+    );
+    
+    // Create scribble fill lines (with padding inside)
+    const padding = 3;
+    this.scribbleLines = createScribbleLines(
+      this.x + padding, 
+      this.y + padding, 
+      this.w - padding * 2, 
+      this.h - padding * 2,
+      this.config
+    );
+    
+    // Calculate path lengths for animation
+    this.outlineLength = (this.w + this.h) * 2;
+    this.scribbleTotalLength = this.scribbleLines.reduce((sum, line) => {
+      return sum + Math.hypot(line.x2 - line.x1, line.y2 - line.y1);
+    }, 0);
+  }
+  
+  createElements(parentGroup) {
+    this.group = createSvgElement('g');
+    
+    // Outline path
+    this.outlineEl = createSvgElement('path', {
+      d: this.outlinePath,
+      fill: 'none',
+      stroke: this.config.strokeColor,
+      'stroke-width': this.config.strokeWidth,
+      'stroke-linecap': 'round',
+      'stroke-linejoin': 'round',
+      filter: 'url(#chalk)'
+    });
+    this.outlineEl.style.strokeDasharray = this.outlineLength;
+    this.outlineEl.style.strokeDashoffset = this.outlineLength;
+    this.group.appendChild(this.outlineEl);
+    
+    // Scribble lines
+    this.scribbleEls = [];
+    this.scribbleLines.forEach(line => {
+      const lineEl = createSvgElement('line', {
+        x1: line.x1, y1: line.y1,
+        x2: line.x2, y2: line.y2,
+        stroke: this.config.strokeColor,
+        'stroke-width': this.config.strokeWidth,
+        'stroke-linecap': 'round',
+        filter: 'url(#chalk)',
+        opacity: 0
+      });
+      this.scribbleEls.push(lineEl);
+      this.group.appendChild(lineEl);
+    });
+    
+    parentGroup.appendChild(this.group);
+  }
+  
+  /**
+   * Update block based on its local progress (0-1)
+   * 0-0.5: draw outline
+   * 0.5-1: fill with scribble
+   */
+  setProgress(progress) {
+    if (progress <= 0) {
+      // Hidden
+      this.outlineEl.style.strokeDashoffset = this.outlineLength;
+      this.scribbleEls.forEach(el => el.style.opacity = 0);
+    } else if (progress < 0.5) {
+      // Drawing outline (0-0.5 maps to 0-1 for outline)
+      const outlineProgress = progress * 2;
+      this.outlineEl.style.strokeDashoffset = this.outlineLength * (1 - outlineProgress);
+      this.scribbleEls.forEach(el => el.style.opacity = 0);
+    } else {
+      // Outline complete, filling scribble (0.5-1 maps to 0-1 for scribble)
+      this.outlineEl.style.strokeDashoffset = 0;
+      const scribbleProgress = (progress - 0.5) * 2;
+      const visibleCount = Math.floor(scribbleProgress * this.scribbleEls.length);
+      
+      this.scribbleEls.forEach((el, i) => {
+        el.style.opacity = i < visibleCount ? 1 : 0;
+      });
+    }
+  }
+}
+
+// ============ MAIN LOADER ============
+
+let blocks = [];
+let animationId = null;
+
+function initLoader() {
+  const svg = document.getElementById('loader-svg');
+  svg.innerHTML = '';
+  
+  const { barX, barY, barWidth, barHeight, blockCount, blockGap, blockPadding } = CONFIG;
+  
+  // Calculate block dimensions
+  const totalGaps = (blockCount - 1) * blockGap;
+  const availableWidth = barWidth - blockPadding * 2 - totalGaps;
+  const blockWidth = availableWidth / blockCount;
+  const blockHeight = barHeight - blockPadding * 2;
+  
+  // Create container group
+  const mainGroup = createSvgElement('g');
+  svg.appendChild(mainGroup);
+  
+  // Create blocks
+  blocks = [];
+  for (let i = 0; i < blockCount; i++) {
+    const blockX = barX + blockPadding + i * (blockWidth + blockGap);
+    const blockY = barY + blockPadding;
+    
+    const block = new ChalkBlock(blockX, blockY, blockWidth, blockHeight, CONFIG);
+    block.createElements(mainGroup);
+    blocks.push(block);
+  }
+  
+  // Outer frame (drawn last so it's on top)
+  const framePath = createImperfectRect(barX, barY, barWidth, barHeight, CONFIG.cornerJitter);
+  const frame = createSvgElement('path', {
+    d: framePath,
+    fill: 'none',
+    stroke: CONFIG.strokeColor,
+    'stroke-width': CONFIG.strokeWidth,
+    'stroke-linecap': 'round',
+    'stroke-linejoin': 'round',
+    filter: 'url(#chalk)'
+  });
+  mainGroup.appendChild(frame);
+}
+
+/**
+ * Set overall progress (0-1)
+ * Each block gets activated in sequence
+ */
+function setProgress(progress) {
+  const blockCount = blocks.length;
+  
+  blocks.forEach((block, i) => {
+    // Calculate this block's progress window
+    const blockStart = i / blockCount;
+    const blockEnd = (i + 1) / blockCount;
+    
+    // Map overall progress to block's local progress
+    let localProgress = 0;
+    if (progress >= blockEnd) {
+      localProgress = 1;
+    } else if (progress > blockStart) {
+      localProgress = (progress - blockStart) / (blockEnd - blockStart);
+    }
+    
+    block.setProgress(localProgress);
+  });
+}
+
+// ============ UI CONTROLS ============
+
+const slider = document.getElementById('progress-slider');
+const valueDisplay = document.getElementById('progress-value');
+
+slider.addEventListener('input', () => {
+  const progress = slider.value / 100;
+  valueDisplay.textContent = slider.value + '%';
+  setProgress(progress);
+});
+
+window.animateProgress = function() {
+  if (animationId) cancelAnimationFrame(animationId);
+  
+  let progress = 0;
+  slider.value = 0;
+  const loop = document.getElementById('loop-toggle').checked;
+  
+  const animate = () => {
+    progress += CONFIG.animationSpeed;
+    
+    if (progress > 1) {
+      if (loop) {
+        progress = 0;
+        regenerate(); // New random patterns each loop
+      } else {
+        progress = 1;
+        setProgress(1);
+        slider.value = 100;
+        valueDisplay.textContent = '100%';
+        animationId = null;
+        return;
+      }
+    }
+    
+    slider.value = Math.round(progress * 100);
+    valueDisplay.textContent = slider.value + '%';
+    setProgress(progress);
+    
+    animationId = requestAnimationFrame(animate);
+  };
+  
+  animationId = requestAnimationFrame(animate);
+};
+
+window.stopAnimation = function() {
+  if (animationId) {
+    cancelAnimationFrame(animationId);
+    animationId = null;
+  }
+};
+
+window.regenerate = function() {
+  const currentProgress = slider.value / 100;
+  initLoader();
+  setProgress(currentProgress);
+};
+
+// Initialize
+initLoader();
+setProgress(0);
+</script>
+</body>
+</html>

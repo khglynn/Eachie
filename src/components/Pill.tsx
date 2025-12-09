@@ -38,18 +38,18 @@ interface PillProps {
 export function Pill({ icon, label, onClick, active, recording, disabled }: PillProps) {
   // Determine style based on state
   let className =
-    'inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium transition-all'
+    'inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium transition-all border'
 
   if (recording) {
     // Recording state: red pulsing
-    className += ' bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 animate-pulse'
+    className += ' bg-paper-error-muted border-paper-error/50 text-paper-error animate-pulse'
   } else if (active) {
-    // Active state: blue highlight
-    className += ' bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300'
+    // Active state: accent highlight
+    className += ' bg-paper-active border-paper-accent/50 text-paper-accent'
   } else {
-    // Default state: neutral with hover
+    // Default state: cream text for enabled look
     className +=
-      ' bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-600'
+      ' bg-paper-card border-paper-accent/30 text-paper-text/80 hover:bg-paper-hover hover:text-paper-text hover:border-paper-accent/50'
   }
 
   if (disabled) {

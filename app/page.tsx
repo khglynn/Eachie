@@ -563,19 +563,19 @@ export default function Home() {
         {/* ---- Header ---- */}
         <div className="flex items-center justify-between mb-6">
           <div className="flex items-center gap-3">
-            {/* Chalk spider logo */}
+            {/* Chalk spider logo - smaller, aligned to bottom */}
             <img
               src="/eachie-spider.png"
               alt="Eachie - A cute chalk-drawn spider with glasses"
-              className="w-12 h-12 sm:w-14 sm:h-14"
+              className="h-6 sm:h-8 w-auto object-contain self-end"
               loading="eager"
               role="img"
             />
-            {/* Chalk wordmark */}
+            {/* Chalk wordmark - larger */}
             <img
               src="/eachie-wordmark.png"
               alt="Eachie"
-              className="h-8 sm:h-10"
+              className="h-12 sm:h-16"
               loading="eager"
               role="img"
             />
@@ -736,12 +736,15 @@ export default function Home() {
         )}
 
         {/* ---- Footer ---- */}
-        <footer className="mt-12 pt-6 border-t border-paper-divider text-center text-xs text-paper-muted">
-          <a href="/terms" className="hover:text-paper-accent">Terms</a>
-          <span className="mx-2">·</span>
-          <a href="/privacy" className="hover:text-paper-accent">Privacy</a>
-          <span className="mx-2">·</span>
-          <a href="/refunds" className="hover:text-paper-accent">Refunds</a>
+        <footer className="mt-12 pt-6 border-t border-paper-divider text-xs text-paper-muted flex items-center justify-between">
+          <div>
+            <a href="/terms" className="hover:text-paper-accent">Terms</a>
+            <span className="mx-2">·</span>
+            <a href="/privacy" className="hover:text-paper-accent">Privacy</a>
+          </div>
+          <a href="https://eachie.canny.io/feature-requests" target="_blank" rel="noopener noreferrer" className="hover:text-paper-accent">
+            Request a Feature
+          </a>
         </footer>
       </div>
     </main>

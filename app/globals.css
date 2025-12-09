@@ -3,7 +3,16 @@
 @tailwind utilities;
 
 /* Chalk-style frame for major UI containers */
+/* Note: filter: url(#chalk) creates wobbly hand-drawn edges but affects ALL content */
+/* Only use .chalk-frame-filtered on elements where you want the full chalk effect */
 .chalk-frame {
+  border: 2px solid #91AAF2;
+  border-radius: 12px;
+  box-shadow: 0 0 0 1px rgba(145, 170, 242, 0.1);
+}
+
+/* Filtered version - use sparingly (affects content inside too) */
+.chalk-frame-filtered {
   border: 2px solid #91AAF2;
   border-radius: 12px;
   filter: url(#chalk);
@@ -14,5 +23,4 @@
 .chalk-frame-light {
   border: 1px solid rgba(145, 170, 242, 0.3);
   border-radius: 8px;
-  filter: url(#chalk);
 }

@@ -182,7 +182,7 @@ export function InputForm({
                       className="h-16 w-16 object-cover rounded-lg border border-paper-accent/30"
                     />
                   ) : (
-                    <div className="h-16 w-16 flex flex-col items-center justify-center rounded-lg border border-paper-accent/30 bg-paper-deep">
+                    <div className="h-16 w-16 flex flex-col items-center justify-center rounded-lg border border-paper-accent/30 bg-paper-card">
                       <span className="text-xl">{getAttachmentIcon(attachment.type)}</span>
                       <span className="text-[10px] text-paper-muted truncate w-14 text-center">
                         {attachment.name.split('.').pop()?.toUpperCase()}
@@ -194,7 +194,7 @@ export function InputForm({
                   <button
                     type="button"
                     onClick={() => onRemoveAttachment(i)}
-                    className="absolute -top-1 -right-1 bg-paper-error text-paper-deep rounded-full w-5 h-5 flex items-center justify-center hover:bg-paper-error/80 opacity-0 group-hover:opacity-100 transition-opacity"
+                    className="absolute -top-1 -right-1 bg-paper-error text-paper-bg rounded-full w-5 h-5 flex items-center justify-center hover:bg-paper-error/80 opacity-0 group-hover:opacity-100 transition-opacity"
                     aria-label={`Remove ${attachment.name}`}
                   >
                     <ChalkClose size={12} />
@@ -211,7 +211,7 @@ export function InputForm({
         )}
 
         {/* Toolbar */}
-        <div className="border-t border-paper-divider p-3 bg-paper-deep space-y-3">
+        <div className="border-t border-paper-divider p-3 bg-paper-card space-y-3">
           <div className="flex items-center justify-between gap-3">
             <div className="flex items-center gap-2 flex-wrap">
               {/* Follow-up actions */}
@@ -269,7 +269,7 @@ export function InputForm({
             <button
               type="submit"
               disabled={isLoading || !query.trim()}
-              className="px-5 py-2 bg-paper-accent text-paper-deep rounded-lg font-medium hover:bg-paper-accent/80 disabled:opacity-50 disabled:cursor-not-allowed text-sm whitespace-nowrap inline-flex items-center gap-1.5"
+              className="px-5 py-2 bg-paper-accent text-paper-bg rounded-lg font-medium hover:bg-paper-accent/80 disabled:opacity-50 disabled:cursor-not-allowed text-sm whitespace-nowrap inline-flex items-center gap-1.5"
             >
               {isLoading ? <><ChalkLoading size={16} /> Working...</> : submitLabel}
             </button>
@@ -284,7 +284,7 @@ export function InputForm({
 
           {/* Per-Session Prompt Editor */}
           {onSessionPromptChange && (
-            <div className="border-t border-paper-divider pt-3">
+            <div className="pt-2">
               <button
                 type="button"
                 onClick={() => setPromptExpanded(!promptExpanded)}

@@ -10,10 +10,10 @@ module.exports = {
       colors: {
         // Royal blue chalk palette
         paper: {
-          // Core palette
-          bg: '#03178C',           // Primary background (royal blue)
+          // Core palette (dark to light)
+          bg: '#020F59',           // Primary background (deepest navy)
           card: '#021373',         // Card backgrounds (deep navy)
-          deep: '#020F59',         // Modals, deeper elements
+          surface: '#03178C',      // Elevated surfaces, highlights
           accent: '#91AAF2',       // Accents, borders, links
           text: '#F2F2F2',         // Primary text
           muted: '#8BA3E6',        // Secondary/muted text
