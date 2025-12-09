@@ -299,4 +299,10 @@ export interface HistoryState {
   query?: string
   /** Number of results in history */
   historyLength?: number
+  /** Clarifying questions (for back to clarifying stage) */
+  clarifyingQuestions?: string[]
+  /** User's answers to clarifying questions */
+  answers?: string[]
+  /** Original query before clarifying (for back to input from clarifying) */
+  originalQuery?: string
 }

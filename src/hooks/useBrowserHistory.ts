@@ -49,11 +49,11 @@ export function useBrowserHistory({
    * Called when stage changes.
    */
   const pushState = useCallback(
-    (newStage: Stage, preserveQuery?: string) => {
+    (newStage: Stage, extraState?: Partial<HistoryState>) => {
       const state: HistoryState = {
         stage: newStage,
-        query: preserveQuery,
         historyLength,
+        ...extraState,
       }
       // Only push if we're moving forward in the flow
       window.history.pushState(state, '', window.location.pathname)
@@ -66,11 +66,11 @@ export function useBrowserHistory({
    * Used for initial page load.
    */
   const replaceState = useCallback(
-    (newStage: Stage, preserveQuery?: string) => {
+    (newStage: Stage, extraState?: Partial<HistoryState>) => {
       const state: HistoryState = {
         stage: newStage,
-        query: preserveQuery,
         historyLength,
+        ...extraState,
       }
       window.history.replaceState(state, '', window.location.pathname)
     },

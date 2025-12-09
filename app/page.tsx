@@ -46,9 +46,14 @@ export default function Home() {
   const [isLoading, setIsLoading] = useState(false)
   const [attachmentErrors, setAttachmentErrors] = useState<string[]>([])
 
+  // Refs to track current values synchronously (avoids stale state from useTransition)
+  const queryRef = useRef('')
+  const followUpQueryRef = useRef('')
+
   // Use transition for non-blocking query updates (fixes INP issue)
   const [, startTransition] = useTransition()
   const setQuery = useCallback((value: string) => {
+    queryRef.current = value // Sync update for form submission
     startTransition(() => setQueryRaw(value))
   }, [])
 
@@ -67,6 +72,7 @@ export default function Home() {
 
   // Non-blocking follow-up query updates
   const setFollowUpQuery = useCallback((value: string) => {
+    followUpQueryRef.current = value // Sync update for form submission
     startTransition(() => setFollowUpQueryRaw(value))
   }, [])
 
@@ -97,8 +103,24 @@ export default function Home() {
     setStage(state.stage)
 
     // Restore query if going back to input
-    if (state.stage === 'input' && state.query) {
-      setQuery(state.query)
+    if (state.stage === 'input') {
+      const q = state.query || state.originalQuery || ''
+      queryRef.current = q
+      setQuery(q)
+    }
+
+    // Restore clarifying state if going back to clarifying
+    if (state.stage === 'clarifying') {
+      if (state.originalQuery) {
+        setOriginalQuery(state.originalQuery)
+        queryRef.current = state.originalQuery
+      }
+      if (state.clarifyingQuestions) {
+        setClarifyingQuestions(state.clarifyingQuestions)
+      }
+      if (state.answers) {
+        setAnswers(state.answers)
+      }
     }
 
     // If going back to before any results, clear history
@@ -263,10 +285,16 @@ export default function Home() {
       if (response.ok) {
         const data = await response.json()
         if (data.questions?.length > 0) {
+          const newAnswers = new Array(data.questions.length).fill('')
           setClarifyingQuestions(data.questions)
-          setAnswers(new Array(data.questions.length).fill(''))
+          setAnswers(newAnswers)
           setStage('clarifying')
-          pushState('clarifying', userQuery)
+          pushState('clarifying', {
+            query: userQuery,
+            originalQuery: userQuery,
+            clarifyingQuestions: data.questions,
+            answers: newAnswers,
+          })
           setIsLoading(false)
           return
         }
@@ -300,12 +328,8 @@ export default function Home() {
     setCompletedModels([])
     setPendingModels(modelNames)
 
-    // Preserve query for error recovery
-    if (!isFollowUp) {
-      setPreservedQuery(finalQuery)
-    } else {
-      setPreservedQuery(followUpQuery)
-    }
+    // Preserve query for error recovery (use finalQuery - it's the current value from ref)
+    setPreservedQuery(finalQuery)
 
     // Build query with context for follow-ups
     let enhancedQuery = finalQuery
@@ -352,12 +376,14 @@ export default function Home() {
 
       // Clear form data on success
       if (!isFollowUp) {
+        queryRef.current = ''
         setQuery('')
         setAttachments([])
         setOriginalQuery('')
         setClarifyingQuestions([])
         setAnswers([])
       } else {
+        followUpQueryRef.current = ''
         setFollowUpQuery('')
         setFollowUpAttachments([])
       }
@@ -367,10 +393,12 @@ export default function Home() {
 
       // GRACEFUL FAILURE: Restore query for editing
       if (!isFollowUp) {
+        queryRef.current = preservedQuery
         setQuery(preservedQuery)
         setStage('input')
-        pushState('input', preservedQuery)
+        pushState('input', { query: preservedQuery })
       } else {
+        followUpQueryRef.current = preservedQuery
         setFollowUpQuery(preservedQuery)
         setStage('results') // Stay on results, show error
       }
@@ -387,8 +415,10 @@ export default function Home() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
-    if (!query.trim()) return
-    getClarifyingQuestions(query)
+    // Use ref for current value (state may be stale due to useTransition)
+    const currentQuery = queryRef.current || query
+    if (!currentQuery.trim()) return
+    getClarifyingQuestions(currentQuery)
   }
 
   const handleAnswersSubmit = (e: React.FormEvent) => {
@@ -412,8 +442,10 @@ export default function Home() {
 
   const handleFollowUp = (e: React.FormEvent) => {
     e.preventDefault()
-    if (!followUpQuery.trim()) return
-    runFullResearch(followUpQuery, true)
+    // Use ref for current value (state may be stale due to useTransition)
+    const currentFollowUp = followUpQueryRef.current || followUpQuery
+    if (!currentFollowUp.trim()) return
+    runFullResearch(currentFollowUp, true)
   }
 
   const updateAnswer = (index: number, value: string) => {
@@ -449,6 +481,8 @@ export default function Home() {
   const startNew = () => {
     setStage('input')
     setConversationHistory([])
+    queryRef.current = ''
+    followUpQueryRef.current = ''
     setQuery('')
     setFollowUpQuery('')
     setFollowUpAttachments([])
