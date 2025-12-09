@@ -12,6 +12,7 @@
 'use client'
 
 import { ChalkProgressBar } from './ChalkProgressBar'
+import { ChalkLoading, ChalkCheck, ChalkCircle, ChalkCircleFilled } from './ChalkIcons'
 
 interface ResearchProgressProps {
   /** Models that have completed (success or error) */
@@ -47,11 +48,13 @@ export function ResearchProgress({
   const progress = totalSteps > 0 ? (completedSteps / totalSteps) * 100 : 0
 
   return (
-    <div className="bg-blue-900/20 border border-blue-800 rounded-xl p-4">
+    <div className="bg-paper-card border border-paper-accent/30 rounded-xl p-4 chalk-frame">
       {/* Header */}
       <div className="flex items-center gap-2 mb-3">
-        <div className="animate-spin text-lg">⏳</div>
-        <p className="text-sm font-medium text-blue-300">
+        <div className="animate-spin">
+          <ChalkLoading size={18} className="text-paper-accent" />
+        </div>
+        <p className="text-sm font-medium text-paper-text">
           {phase === 'synthesizing'
             ? 'Creating summary...'
             : isFollowUp
@@ -71,29 +74,37 @@ export function ResearchProgress({
         {completedModels.map((model) => (
           <span
             key={model}
-            className="px-2 py-0.5 bg-green-900/30 text-green-300 rounded text-xs"
+            className="px-2 py-0.5 bg-paper-success-muted/50 text-paper-success rounded text-xs inline-flex items-center gap-1"
           >
-            ✓ {model}
+            <ChalkCheck size={12} /> {model}
           </span>
         ))}
         {/* Pending models */}
         {pendingModels.map((model) => (
           <span
             key={model}
-            className="px-2 py-0.5 bg-slate-700 text-slate-400 rounded text-xs animate-pulse"
+            className="px-2 py-0.5 bg-paper-card text-paper-muted rounded text-xs animate-pulse inline-flex items-center gap-1 border border-paper-accent/20"
           >
-            ○ {model}
+            <ChalkCircle size={12} /> {model}
           </span>
         ))}
         {/* Synthesis step */}
         <span
-          className={`px-2 py-0.5 rounded text-xs ${
+          className={`px-2 py-0.5 rounded text-xs inline-flex items-center gap-1 ${
             phase === 'synthesizing'
-              ? 'bg-blue-900/50 text-blue-300 animate-pulse'
-              : 'bg-slate-700 text-slate-500'
+              ? 'bg-paper-active text-paper-accent animate-pulse'
+              : 'bg-paper-card text-paper-muted border border-paper-accent/20'
           }`}
         >
-          {phase === 'synthesizing' ? '◉ Summary' : '○ Summary'}
+          {phase === 'synthesizing' ? (
+            <>
+              <ChalkCircleFilled size={12} /> Summary
+            </>
+          ) : (
+            <>
+              <ChalkCircle size={12} /> Summary
+            </>
+          )}
         </span>
       </div>
     </div>

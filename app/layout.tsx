@@ -23,7 +23,7 @@ export default function RootLayout({
     <html lang="en" className="dark">
       <head>
         <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-        <meta name="theme-color" content="#03178C" />
+        <meta name="theme-color" content="#020F59" />
       </head>
       <body className="antialiased bg-paper-bg min-h-screen">
         {/* SVG filter for chalk effect on loading bar */}

@@ -14,7 +14,15 @@
 import { useState, useRef, useEffect } from 'react'
 import ReactMarkdown from 'react-markdown'
 import type { ResearchResult } from '@/types'
-import { ChalkSparkle } from './ChalkIcons'
+import {
+  ChalkSparkle,
+  ChalkSearch,
+  ChalkChat,
+  ChalkCheck,
+  ChalkX,
+  ChalkChevronUp,
+  ChalkChevronDown,
+} from './ChalkIcons'
 
 interface ResultsViewProps {
   /** All research rounds in this session */
@@ -50,10 +58,10 @@ function QueryDisplay({ query, roundIdx }: { query: string; roundIdx: number }) 
   }, [query])
 
   return (
-    <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg overflow-hidden">
+    <div className="bg-paper-surface/30 rounded-lg overflow-hidden border border-paper-accent/20">
       <div
         ref={contentRef}
-        className={`px-4 py-2 text-sm text-blue-800 dark:text-blue-200 whitespace-pre-wrap break-words transition-all ${
+        className={`px-4 py-2 text-sm text-paper-text/90 whitespace-pre-wrap break-words transition-all ${
           !isExpanded && needsExpansion ? 'max-h-24 overflow-hidden' : 'max-h-96 overflow-y-auto'
         }`}
       >
@@ -63,9 +71,17 @@ function QueryDisplay({ query, roundIdx }: { query: string; roundIdx: number }) 
         <button
           type="button"
           onClick={() => setIsExpanded(!isExpanded)}
-          className="w-full py-1 text-xs text-blue-600 dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-blue-900/40 border-t border-blue-200 dark:border-blue-800"
+          className="w-full py-1 text-xs text-paper-accent hover:bg-paper-hover border-t border-paper-accent/20 flex items-center justify-center gap-1"
         >
-          {isExpanded ? '▲ Show less' : '▼ Show more'}
+          {isExpanded ? (
+            <>
+              <ChalkChevronUp size={12} /> Show less
+            </>
+          ) : (
+            <>
+              <ChalkChevronDown size={12} /> Show more
+            </>
+          )}
         </button>
       )}
     </div>
@@ -95,13 +111,9 @@ export function ResultsView({ conversationHistory }: ResultsViewProps) {
     <div className="space-y-4">
       {/* Cost Banner */}
       {cumulativeCost > 0 && (
-        <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg px-4 py-2 text-sm">
-          <span className="font-medium text-green-700 dark:text-green-300">
-            Session Cost:{' '}
-          </span>
-          <span className="text-green-600 dark:text-green-400">
-            ${cumulativeCost.toFixed(4)}
-          </span>
+        <div className="bg-paper-success-muted/50 border border-paper-success/30 rounded-lg px-4 py-2 text-sm">
+          <span className="font-medium text-paper-success">Session Cost: </span>
+          <span className="text-paper-success/80">${cumulativeCost.toFixed(4)}</span>
         </div>
       )}
 
@@ -109,9 +121,17 @@ export function ResultsView({ conversationHistory }: ResultsViewProps) {
       {conversationHistory.map((result, roundIdx) => (
         <div key={roundIdx} className="space-y-3">
           {/* Round Header */}
-          <div className="flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400">
-            <span className="font-medium">
-              {roundIdx === 0 ? '🔍 Query' : `💬 Follow-up ${roundIdx}`}
+          <div className="flex items-center gap-2 text-xs text-paper-muted">
+            <span className="font-medium flex items-center gap-1">
+              {roundIdx === 0 ? (
+                <>
+                  <ChalkSearch size={14} /> Query
+                </>
+              ) : (
+                <>
+                  <ChalkChat size={14} /> Follow-up {roundIdx}
+                </>
+              )}
             </span>
             {result.timestamp && (
               <span>• {new Date(result.timestamp).toLocaleTimeString()}</span>
@@ -123,59 +143,68 @@ export function ResultsView({ conversationHistory }: ResultsViewProps) {
           <QueryDisplay query={result.query} roundIdx={roundIdx} />
 
           {/* Synthesis Card */}
-          <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 p-4">
+          <div className="bg-paper-card rounded-xl border border-paper-accent/30 p-4 chalk-frame">
             <div className="flex items-center justify-between mb-3">
-              <h3 className="font-semibold text-slate-800 dark:text-slate-100 flex items-center gap-2">
-                <ChalkSparkle size={18} className="text-yellow-500" />
+              <h3 className="font-semibold text-paper-text flex items-center gap-2">
+                <ChalkSparkle size={18} className="text-paper-warning" />
                 Summary
               </h3>
               {result.totalCost !== undefined && result.totalCost > 0 && (
-                <span className="text-xs text-green-600 dark:text-green-400">
-                  ${result.totalCost.toFixed(4)}
-                </span>
+                <span className="text-xs text-paper-success">${result.totalCost.toFixed(4)}</span>
               )}
             </div>
-            <div className="prose prose-sm dark:prose-invert max-w-none">
+            <div className="prose prose-sm prose-invert max-w-none text-paper-text/90">
               <ReactMarkdown>{result.synthesis}</ReactMarkdown>
             </div>
           </div>
 
           {/* Individual Responses Accordion */}
-          <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden">
+          <div className="bg-paper-card rounded-xl border border-paper-accent/30 overflow-hidden chalk-frame-light">
             <button
               type="button"
               onClick={() => toggleRoundExpansion(roundIdx)}
-              className="w-full px-4 py-2 text-sm font-medium text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700 flex items-center justify-between"
+              className="w-full px-4 py-2 text-sm font-medium text-paper-text/80 hover:bg-paper-hover flex items-center justify-between"
             >
               <span>
                 Individual Responses ({result.successCount}/{result.modelCount})
               </span>
-              <span>{expandedRounds.has(roundIdx) ? '▲' : '▼'}</span>
+              <span>
+                {expandedRounds.has(roundIdx) ? (
+                  <ChalkChevronUp size={14} />
+                ) : (
+                  <ChalkChevronDown size={14} />
+                )}
+              </span>
             </button>
 
             {expandedRounds.has(roundIdx) && (
-              <div className="border-t border-slate-200 dark:border-slate-700 p-4 space-y-4">
+              <div className="border-t border-paper-divider p-4 space-y-4">
                 {result.responses.map((response, i) => (
-                  <div key={i} className="border-l-4 border-slate-200 dark:border-slate-600 pl-4">
+                  <div key={i} className="border-l-4 border-paper-accent/40 pl-4">
                     {/* Response Header */}
                     <div className="flex items-center justify-between mb-2 flex-wrap gap-2">
                       <div className="flex items-center gap-2">
-                        <h4 className="font-medium text-sm text-slate-700 dark:text-slate-200">
-                          {response.success ? '✓' : '✗'} {response.model}
+                        <h4 className="font-medium text-sm text-paper-text flex items-center gap-1">
+                          {response.success ? (
+                            <ChalkCheck size={14} className="text-paper-success" />
+                          ) : (
+                            <ChalkX size={14} className="text-paper-error" />
+                          )}
+                          {response.model}
                         </h4>
                         {response.durationMs && (
-                          <span className="text-xs text-slate-400">
+                          <span className="text-xs text-paper-muted">
                             {(response.durationMs / 1000).toFixed(1)}s
                           </span>
                         )}
                         {response.cost !== undefined && response.cost > 0 && (
-                          <span className="text-xs text-green-600">
+                          <span className="text-xs text-paper-success">
                             ${response.cost.toFixed(4)}
                           </span>
                         )}
                       </div>
                       {response.usage && (
-                        <span className="text-xs text-slate-400">
+                        <span className="text-xs text-paper-muted">
                           {response.usage.totalTokens.toLocaleString()} tokens
                         </span>
                       )}
@@ -183,13 +212,11 @@ export function ResultsView({ conversationHistory }: ResultsViewProps) {
 
                     {/* Response Content */}
                     {response.success ? (
-                      <div className="text-sm text-slate-600 dark:text-slate-300 prose prose-sm dark:prose-invert max-w-none">
+                      <div className="text-sm text-paper-text/80 prose prose-sm prose-invert max-w-none">
                         <ReactMarkdown>{response.content}</ReactMarkdown>
                       </div>
                     ) : (
-                      <p className="text-sm text-red-600 dark:text-red-400">
-                        Error: {response.error}
-                      </p>
+                      <p className="text-sm text-paper-error">Error: {response.error}</p>
                     )}
                   </div>
                 ))}

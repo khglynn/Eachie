@@ -16,7 +16,7 @@ import {
   ORCHESTRATOR_OPTIONS,
   DEFAULT_ORCHESTRATOR_PROMPT,
 } from '@/config/models'
-import { ChalkSettings } from './ChalkIcons'
+import { ChalkSettings, ChalkClose, ChalkCheck } from './ChalkIcons'
 
 interface SettingsModalProps {
   /** Current settings */
@@ -76,40 +76,38 @@ export function SettingsModal({ settings, onSave, onClose, byokMode }: SettingsM
 
   return (
     <div
-      className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4"
+      className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4"
       onClick={onClose}
     >
       <div
-        className="bg-white dark:bg-slate-800 rounded-xl max-w-lg w-full max-h-[90vh] overflow-y-auto shadow-2xl"
+        className="bg-paper-card rounded-xl max-w-lg w-full max-h-[90vh] overflow-y-auto shadow-2xl chalk-frame"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="sticky top-0 bg-white dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 px-6 py-4 flex items-center justify-between">
+        <div className="sticky top-0 bg-paper-card border-b border-paper-divider px-6 py-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <ChalkSettings size={20} className="text-slate-600 dark:text-slate-300" />
-            <h2 className="text-lg font-semibold text-slate-800 dark:text-slate-100">
-              Settings
-            </h2>
+            <ChalkSettings size={20} className="text-paper-accent" />
+            <h2 className="text-lg font-semibold text-paper-text">Settings</h2>
             {/* Save notification */}
             {showSaved && (
-              <span className="text-xs text-green-600 dark:text-green-400 bg-green-50 dark:bg-green-900/30 px-2 py-0.5 rounded animate-pulse">
-                ✓ Saved
+              <span className="text-xs text-paper-success bg-paper-success-muted/50 px-2 py-0.5 rounded animate-pulse inline-flex items-center gap-1">
+                <ChalkCheck size={12} /> Saved
               </span>
             )}
           </div>
           <button
             onClick={onClose}
-            className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 text-xl"
+            className="text-paper-muted hover:text-paper-text"
           >
-            ×
+            <ChalkClose size={20} />
           </button>
         </div>
 
         <div className="p-6 space-y-6">
           {/* BYOK Notice */}
           {byokMode && (
-            <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-3">
-              <p className="text-sm text-blue-700 dark:text-blue-300">
+            <div className="bg-paper-surface/50 border border-paper-accent/30 rounded-lg p-3">
+              <p className="text-sm text-paper-text">
                 <strong>BYOK Mode Active</strong> - You must provide your own API keys to
                 use this app.
               </p>
@@ -118,10 +116,8 @@ export function SettingsModal({ settings, onSave, onClose, byokMode }: SettingsM
 
           {/* API Keys Section */}
           <section>
-            <h3 className="text-sm font-semibold text-slate-700 dark:text-slate-200 mb-1">
-              API Keys
-            </h3>
-            <p className="text-xs text-slate-500 dark:text-slate-400 mb-3">
+            <h3 className="text-sm font-semibold text-paper-text mb-1">API Keys</h3>
+            <p className="text-xs text-paper-muted mb-3">
               {byokMode
                 ? 'Required for BYOK mode.'
                 : 'Optional. Uses server keys if empty.'}{' '}
@@ -131,21 +127,21 @@ export function SettingsModal({ settings, onSave, onClose, byokMode }: SettingsM
             <div className="space-y-3">
               {/* OpenRouter Key */}
               <div>
-                <label className="block text-xs font-medium text-slate-600 dark:text-slate-300 mb-1">
-                  OpenRouter <span className="text-red-500">{byokMode ? '*' : ''}</span>
+                <label className="block text-xs font-medium text-paper-text/80 mb-1">
+                  OpenRouter <span className="text-paper-error">{byokMode ? '*' : ''}</span>
                 </label>
                 <input
                   type="password"
                   value={settings.openrouterKey}
                   onChange={(e) => handleSave({ openrouterKey: e.target.value })}
                   placeholder="sk-or-..."
-                  className="w-full px-3 py-2 text-sm border border-slate-200 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-900 dark:text-slate-100"
+                  className="w-full px-3 py-2 text-sm border border-paper-accent/30 rounded-lg bg-paper-bg text-paper-text placeholder:text-paper-muted"
                 />
               </div>
 
               {/* OpenAI Key (for voice transcription) */}
               <div>
-                <label className="block text-xs font-medium text-slate-600 dark:text-slate-300 mb-1">
+                <label className="block text-xs font-medium text-paper-text/80 mb-1">
                   OpenAI (for voice)
                 </label>
                 <input
@@ -153,7 +149,7 @@ export function SettingsModal({ settings, onSave, onClose, byokMode }: SettingsM
                   value={settings.openaiKey}
                   onChange={(e) => handleSave({ openaiKey: e.target.value })}
                   placeholder="sk-..."
-                  className="w-full px-3 py-2 text-sm border border-slate-200 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-900 dark:text-slate-100"
+                  className="w-full px-3 py-2 text-sm border border-paper-accent/30 rounded-lg bg-paper-bg text-paper-text placeholder:text-paper-muted"
                 />
               </div>
             </div>
@@ -161,10 +157,8 @@ export function SettingsModal({ settings, onSave, onClose, byokMode }: SettingsM
 
           {/* Summary Model Section */}
           <section>
-            <h3 className="text-sm font-semibold text-slate-700 dark:text-slate-200 mb-2">
-              Summary Model
-            </h3>
-            <p className="text-xs text-slate-500 dark:text-slate-400 mb-3">
+            <h3 className="text-sm font-semibold text-paper-text mb-2">Summary Model</h3>
+            <p className="text-xs text-paper-muted mb-3">
               Which model combines all responses.
             </p>
             <div className="grid grid-cols-2 gap-2">
@@ -181,21 +175,15 @@ export function SettingsModal({ settings, onSave, onClose, byokMode }: SettingsM
                     onClick={() => handleSave({ orchestrator: orch.id })}
                     className={`text-left p-2 rounded-lg text-sm transition-colors ${
                       settings.orchestrator === orch.id
-                        ? 'bg-blue-100 dark:bg-blue-900/30 border-2 border-blue-400'
-                        : 'bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 hover:border-slate-300'
+                        ? 'bg-paper-active border-2 border-paper-accent'
+                        : 'bg-paper-bg border border-paper-accent/30 hover:border-paper-accent/60'
                     }`}
                   >
                     <div className="flex justify-between items-center">
-                      <span className="font-medium text-slate-700 dark:text-slate-200">
-                        {orch.name}
-                      </span>
-                      <span className="text-xs text-slate-400 dark:text-slate-500">
-                        {costDisplay}
-                      </span>
+                      <span className="font-medium text-paper-text">{orch.name}</span>
+                      <span className="text-xs text-paper-muted">{costDisplay}</span>
                     </div>
-                    <div className="text-xs text-slate-500 dark:text-slate-400">
-                      {orch.description}
-                    </div>
+                    <div className="text-xs text-paper-muted">{orch.description}</div>
                   </button>
                 )
               })}
@@ -204,24 +192,22 @@ export function SettingsModal({ settings, onSave, onClose, byokMode }: SettingsM
 
           {/* Summary Prompt Section */}
           <section>
-            <h3 className="text-sm font-semibold text-slate-700 dark:text-slate-200 mb-2">
-              Summary Prompt
-            </h3>
-            <p className="text-xs text-slate-500 dark:text-slate-400 mb-3">
+            <h3 className="text-sm font-semibold text-paper-text mb-2">Summary Prompt</h3>
+            <p className="text-xs text-paper-muted mb-3">
               Instructions for how the orchestrator should summarize responses.
             </p>
             <textarea
               value={settings.orchestratorPrompt ?? DEFAULT_ORCHESTRATOR_PROMPT}
               onChange={(e) => handleSave({ orchestratorPrompt: e.target.value })}
               rows={5}
-              className="w-full px-3 py-2 text-sm border border-slate-200 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-900 dark:text-slate-100 font-mono resize-y"
+              className="w-full px-3 py-2 text-sm border border-paper-accent/30 rounded-lg bg-paper-bg text-paper-text font-mono resize-y placeholder:text-paper-muted"
               placeholder={DEFAULT_ORCHESTRATOR_PROMPT}
             />
             {settings.orchestratorPrompt && settings.orchestratorPrompt !== DEFAULT_ORCHESTRATOR_PROMPT && (
               <button
                 type="button"
                 onClick={() => handleSave({ orchestratorPrompt: '' })}
-                className="mt-2 text-xs text-blue-600 dark:text-blue-400 hover:underline"
+                className="mt-2 text-xs text-paper-accent hover:underline"
               >
                 Reset to default
               </button>
@@ -230,17 +216,15 @@ export function SettingsModal({ settings, onSave, onClose, byokMode }: SettingsM
 
           {/* Model Visibility Section */}
           <section>
-            <h3 className="text-sm font-semibold text-slate-700 dark:text-slate-200 mb-2">
-              Available Models
-            </h3>
-            <p className="text-xs text-slate-500 dark:text-slate-400 mb-3">
+            <h3 className="text-sm font-semibold text-paper-text mb-2">Available Models</h3>
+            <p className="text-xs text-paper-muted mb-3">
               Uncheck models to hide them from selection.
             </p>
             <div className="grid grid-cols-2 gap-1.5 max-h-48 overflow-y-auto">
               {MODEL_OPTIONS.map((model) => (
                 <label
                   key={model.id}
-                  className="flex items-center gap-2 p-1.5 rounded text-sm cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-700"
+                  className="flex items-center gap-2 p-1.5 rounded text-sm cursor-pointer hover:bg-paper-hover"
                 >
                   <input
                     type="checkbox"
@@ -251,11 +235,9 @@ export function SettingsModal({ settings, onSave, onClose, byokMode }: SettingsM
                         : [...settings.hiddenModels, model.id]
                       handleSave({ hiddenModels: hidden })
                     }}
-                    className="rounded text-blue-600 w-3.5 h-3.5"
+                    className="rounded text-paper-accent w-3.5 h-3.5"
                   />
-                  <span className="text-slate-600 dark:text-slate-300 truncate text-xs">
-                    {model.name}
-                  </span>
+                  <span className="text-paper-text/80 truncate text-xs">{model.name}</span>
                 </label>
               ))}
             </div>

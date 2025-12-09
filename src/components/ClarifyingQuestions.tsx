@@ -10,6 +10,8 @@
 
 'use client'
 
+import { ChalkChat, ChalkArrowRight, ChalkLoading } from './ChalkIcons'
+
 interface ClarifyingQuestionsProps {
   /** Questions to display */
   questions: string[]
@@ -48,11 +50,12 @@ export function ClarifyingQuestions({
 }: ClarifyingQuestionsProps) {
   return (
     <form onSubmit={onSubmit}>
-      <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden">
+      <div className="bg-paper-card rounded-xl border border-paper-accent/30 overflow-hidden chalk-frame">
         {/* Header */}
-        <div className="p-3 bg-blue-50 dark:bg-blue-900/20 border-b border-blue-100 dark:border-blue-800">
-          <p className="text-sm text-blue-700 dark:text-blue-300">
-            💬 Quick context for better results (optional)
+        <div className="p-3 bg-paper-surface/30 border-b border-paper-accent/20">
+          <p className="text-sm text-paper-text flex items-center gap-2">
+            <ChalkChat size={16} className="text-paper-accent" />
+            Quick context for better results (optional)
           </p>
         </div>
 
@@ -60,7 +63,7 @@ export function ClarifyingQuestions({
         <div className="p-4 space-y-3">
           {questions.map((question, i) => (
             <div key={i}>
-              <label className="block text-sm font-medium text-slate-700 dark:text-slate-200 mb-1">
+              <label className="block text-sm font-medium text-paper-text mb-1">
                 {i + 1}. {question}
               </label>
               <input
@@ -68,27 +71,33 @@ export function ClarifyingQuestions({
                 value={answers[i] || ''}
                 onChange={(e) => onAnswerChange(i, e.target.value)}
                 placeholder="Optional"
-                className="w-full px-3 py-2 border border-slate-200 dark:border-slate-600 rounded-lg text-sm bg-white dark:bg-slate-900 dark:text-slate-100"
+                className="w-full px-3 py-2 border border-paper-accent/30 rounded-lg text-sm bg-paper-bg text-paper-text placeholder:text-paper-muted"
               />
             </div>
           ))}
         </div>
 
         {/* Footer */}
-        <div className="border-t border-slate-100 dark:border-slate-700 p-3 bg-slate-50 dark:bg-slate-900 flex justify-between">
+        <div className="border-t border-paper-divider p-3 bg-paper-bg flex justify-between">
           <button
             type="button"
             onClick={onSkip}
-            className="text-sm text-slate-500 dark:text-slate-400 hover:text-slate-700"
+            className="text-sm text-paper-muted hover:text-paper-text flex items-center gap-1"
           >
-            Skip →
+            Skip <ChalkArrowRight size={14} />
           </button>
           <button
             type="submit"
             disabled={isLoading}
-            className="px-5 py-2 bg-blue-600 dark:bg-blue-500 text-white rounded-lg text-sm font-medium disabled:opacity-50"
+            className="px-5 py-2 bg-paper-accent text-paper-bg rounded-lg text-sm font-medium disabled:opacity-50 inline-flex items-center gap-1.5"
           >
-            {isLoading ? '⏳' : 'Research'}
+            {isLoading ? (
+              <>
+                <ChalkLoading size={14} /> Working...
+              </>
+            ) : (
+              'Research'
+            )}
           </button>
         </div>
       </div>
