@@ -1,42 +1,37 @@
-# Eachie Roadmap
+# Roadmap
 
-**Last Updated:** December 10, 2024
-**Current Phase:** Post-Launch Foundation
-
----
-
-## Completed
-
-| Phase | Status | Plan File |
-|-------|--------|-----------|
-| Core App | ✅ Done | - |
-| Code Review & Cleanup | ✅ Done | `claude-plans/2025-12-09-code-review-cleanup.md` |
-| Stripe, Auth & Usage (Plan 1) | ✅ Done | `claude-plans/2024-12-10-plan1-stripe-auth-usage.md` |
+What's next, in order. When done, move to `COMPLETED.md`.
 
 ---
 
-## Next Up (In Order)
+## 1. Settings Page
+**Plan:** `claude-plans/2024-12-10-chat-history-legal-friends.md` (Part 4)
 
-### 1. Settings Page
-**Status:** Not started
-**What:** User settings UI - account info, payment method, data preferences, referral section
-**Why first:** Foundation for all user-facing features below
+User settings UI - foundation for everything below.
+
+**What:**
+- Account info (email from Clerk, sign out)
+- Payment method management (view/update)
+- Auto top-up settings (threshold, amount)
+- Data retention preference
+- Referral code section (placeholder until #5)
+
 **Files to create:**
 - `app/settings/page.tsx`
 - `src/components/SettingsSection.tsx`
 
 ---
 
-### 2. Legal Compliance
-**Status:** Not started
+## 2. Legal Compliance
 **Plan:** `claude-plans/2024-12-10-chat-history-legal-friends.md` (Part 2)
+
+Must exist BEFORE we store user content (chat history).
+
 **What:**
 - Update privacy policy with data storage disclosure
 - Update terms of service
-- Add "Delete My Data" endpoint and UI
+- "Delete My Data" endpoint + UI in settings
 - GDPR/CCPA compliance (right to access, delete, retention limits)
-
-**Why second:** Must exist BEFORE we store user data (chat history)
 
 **Files to create/modify:**
 - `app/privacy/page.tsx` - Update
@@ -45,14 +40,15 @@
 
 ---
 
-### 3. Chat History
-**Status:** Not started
+## 3. Chat History
 **Plan:** `claude-plans/2024-12-10-chat-history-legal-friends.md` (Part 1)
+
+Server-side session storage for paid users. BYOK stays client-side only.
+
 **What:**
-- Server-side session storage for paid users
-- BYOK sessions stay client-side only
-- Auto-save after research completion
+- Auto-save sessions after research completion
 - History sidebar/modal to load previous sessions
+- Session title generation from first query
 - Retention settings (6mo default, 5yr max)
 
 **Files to create:**
@@ -63,12 +59,14 @@
 
 ---
 
-### 4. Analytics Schema
-**Status:** Not started
+## 4. Analytics Schema
 **Plan:** `claude-plans/2024-12-10-analytics-schema.md`
+
+Better data for insights and decision-making.
+
 **What:**
 - New tables: `research_queries`, `model_calls`, `dim_models`, `dim_dates`
-- Write to analytics tables from research API
+- Write analytics data from research API
 - PostHog events for behavioral tracking
 - Model sync cron job
 
@@ -79,14 +77,15 @@
 
 ---
 
-### 5. Friend Codes
-**Status:** Not started
+## 5. Friend Codes
 **Plan:** `claude-plans/2024-12-10-chat-history-legal-friends.md` (Part 3)
+
+Growth feature - both parties get $6 when code redeemed.
+
 **What:**
-- Both parties get $6 when code redeemed
 - 6 invites per user max
 - Free tier balance carries over on signup
-- UI in settings page
+- Referral UI in settings page
 
 **Files to create:**
 - `app/api/referral/code/route.ts`
@@ -96,27 +95,8 @@
 
 ---
 
-## Future (After Core Features)
+## Future
 
-| Feature | Plan File |
-|---------|-----------|
+| Feature | Plan |
+|---------|------|
 | Storybook Component Library | `claude-plans/2024-12-10-storybook-component-library.md` |
-
----
-
-## How to Use This File
-
-1. **Starting a session:** Check "Next Up" to see what's next
-2. **Finishing a feature:** Move it to "Completed" and update the date
-3. **Plans have details:** Each plan file has implementation steps, files to modify, etc.
-
----
-
-## Quick Links
-
-| What | Where |
-|------|-------|
-| All plans | `claude-plans/` folder |
-| Project instructions | `CLAUDE.md` |
-| Orchestration flow | `ORCHESTRATION.md` |
-| Database schema | `src/server/schema.sql` |

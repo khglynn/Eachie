@@ -4,14 +4,9 @@
 
 ## Starting a Session?
 
-**Check `ROADMAP.md` first** - It shows what's completed and what's next in order:
-1. Settings Page
-2. Legal Compliance
-3. Chat History
-4. Analytics Schema
-5. Friend Codes
+**→ Check `ROADMAP.md` first ←**
 
-Detailed implementation plans are in `claude-plans/`.
+It has the ordered list of what to work on next. When something's done, move it to `COMPLETED.md`.
 
 ---
 
@@ -267,24 +262,11 @@ The chalk filter is defined in `app/layout.tsx`:
 
 Adjust values for more/less hand-drawn effect.
 
-## Current Status (Dec 2024)
+## Project Status
 
-### Completed
-- ✅ Core app (multi-model research)
-- ✅ Code review & cleanup (Grade A)
-- ✅ Anonymous usage tracking ($12 free tier per device)
-- ✅ Rate limiting (20/hr, 100/day for free tier)
-- ✅ Clerk auth (users table, device linking)
-- ✅ Stripe backend (auto top-up flow, webhooks)
-- ✅ Database schema (users, sessions, usage)
-
-### Next Up
-See `ROADMAP.md` for the full ordered list. TL;DR:
-1. **Settings Page** - User settings UI
-2. **Legal Compliance** - Privacy policy updates, delete data feature
-3. **Chat History** - Server-side session storage for paid users
-
-### Reference Files
-- `ROADMAP.md` - What's next (ordered)
-- `claude-plans/` - Detailed implementation plans
-- `ORCHESTRATION.md` - How research flow works
+| File | Purpose |
+|------|---------|
+| `ROADMAP.md` | What's next (ordered list) |
+| `COMPLETED.md` | What's done |
+| `claude-plans/` | Detailed implementation plans |
+| `ORCHESTRATION.md` | How research flow works |
