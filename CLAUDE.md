@@ -28,10 +28,12 @@ Warm, clear, curious. Educational without being condescending. Eachie genuinely 
 |---------|---------|--------|
 | **OpenRouter** | API gateway for all AI models | Active |
 | **Claude Code** | All dev work, debugging | Active |
+| **FingerprintJS** | Device fingerprinting for anonymous usage tracking | Active (free tier) |
+| **Neon** | Database (Postgres) - usage tracking, sessions | Active |
+| **PostHog** | Session tracking, analytics | Active |
+| **Sentry** | Error tracking | Active |
 | **Clerk** | Account management, auth | Planned |
-| **Stripe** | Payment processing | Planned |
-| **Neon** | Database (Postgres) | Planned |
-| **PostHog** | Session tracking, testing, errors | Planned |
+| **Stripe** | Payment processing, auto top-up | Planned |
 | **Canny** | Feature requests | Active (eachie.canny.io) |
 
 ## Key Files
@@ -40,7 +42,11 @@ Warm, clear, curious. Educational without being condescending. Eachie genuinely 
 |------|---------|
 | `/app/page.tsx` | Main app flow |
 | `/src/config/models.ts` | Model configuration |
+| `/src/config/messages.ts` | All user-facing messages (single source of truth) |
 | `/src/lib/research.ts` | Query + synthesis logic |
+| `/src/lib/fingerprint.ts` | Device fingerprinting |
+| `/src/server/queries/usage.ts` | Usage tracking, rate limiting |
+| `/src/server/schema.sql` | Database schema |
 | `/src/types/index.ts` | TypeScript interfaces |
 | **`ORCHESTRATION.md`** | How the research flow works (keep updated!) |
 
@@ -217,8 +223,14 @@ Latest review: **Grade A (Excellent)**
 - Component organization: A
 - Design system consistency: A-
 - Type safety: A+
-- API layer: B+ (pricing consolidated)
+- API layer: A (usage tracking, rate limiting added)
 - Documentation: A
 
-**Ready for:** Database integration, auth, payments.
-See `NEXT-STEPS.md` for implementation roadmap.
+**Implemented:**
+- Anonymous usage tracking ($12 free tier per device)
+- Rate limiting (20/hr, 100/day for free tier)
+- System-wide cost monitoring + circuit breaker
+- beforeunload warning for unsaved work
+
+**Ready for:** Auth (Clerk), payments (Stripe), chat history.
+See `claude-plans/` for implementation roadmaps.

@@ -20,6 +20,7 @@ import {
   DEFAULT_ORCHESTRATOR_PROMPT,
 } from '@/config/models'
 import { calculateCost } from '@/lib/pricing'
+import { checkUsageAllowed, addAnonymousUsage } from '@/server/queries/usage'
 
 export const runtime = 'nodejs'
 export const maxDuration = 800
@@ -59,6 +60,54 @@ export async function POST(request: NextRequest) {
         }
 
         const startTime = Date.now()
+
+        // Get device ID from header (for anonymous usage tracking)
+        const deviceId = request.headers.get('X-Device-ID') || undefined
+
+        // Check usage limits (skip if BYOK - no cost to us)
+        // Only check if DATABASE_URL is configured (graceful degradation)
+        if (process.env.DATABASE_URL && !byokMode && !apiKey) {
+          try {
+            const usageCheck = await checkUsageAllowed({
+              byokMode: false,
+              deviceId,
+            })
+
+            if (!usageCheck.allowed) {
+              switch (usageCheck.reason) {
+                case 'free_tier_exhausted':
+                  sendEvent('error', {
+                    message: 'Free research limit reached. Sign in to continue.',
+                    code: 'FREE_TIER_EXHAUSTED',
+                  })
+                  break
+                case 'free_tier_paused':
+                  sendEvent('error', {
+                    message: 'Free research is temporarily paused due to high demand. Sign in to continue.',
+                    code: 'FREE_TIER_PAUSED',
+                  })
+                  break
+                case 'rate_limited':
+                  sendEvent('error', {
+                    message: `Too many requests. Please wait ${usageCheck.retryAfter || 'a moment'} and try again.`,
+                    code: 'RATE_LIMITED',
+                  })
+                  break
+                case 'insufficient_credits':
+                  sendEvent('error', {
+                    message: 'Insufficient credits. Please add credits to continue.',
+                    code: 'INSUFFICIENT_CREDITS',
+                  })
+                  break
+              }
+              controller.close()
+              return
+            }
+          } catch (dbError) {
+            // Database not available - allow query but log warning
+            console.warn('[Research] Database check failed, allowing query:', dbError)
+          }
+        }
 
         // API Key validation
         const forceBYOK = process.env.FORCE_BYOK === 'true'
@@ -249,6 +298,8 @@ ${customPrompt}`
         // Total = all model costs + orchestrator cost
         const modelsCost = responses.reduce((sum, r) => sum + (r.cost || 0), 0)
 
+        const totalCost = modelsCost + orchestratorCost
+
         const result: ResearchResult = {
           query,
           responses,
@@ -256,9 +307,21 @@ ${customPrompt}`
           totalDurationMs: Date.now() - startTime,
           modelCount: models.length,
           successCount: successful.length,
-          totalCost: modelsCost + orchestratorCost,
+          totalCost,
           timestamp: new Date().toISOString(),
           orchestrator: orchestratorName,
+        }
+
+        // Record cost for anonymous users (skip if BYOK or no database)
+        if (process.env.DATABASE_URL && deviceId && !byokMode && !apiKey && totalCost > 0) {
+          try {
+            // Convert dollars to cents (totalCost is in dollars)
+            const costCents = Math.round(totalCost * 100)
+            await addAnonymousUsage(deviceId, costCents)
+          } catch (dbError) {
+            // Log but don't fail the request
+            console.warn('[Research] Failed to record usage:', dbError)
+          }
         }
 
         sendEvent('complete', { result })

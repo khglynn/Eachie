@@ -14,9 +14,10 @@
 'use client'
 
 import { useState, useCallback, useEffect, useTransition, useRef } from 'react'
+import { usePostHog } from 'posthog-js/react'
 import type { Stage, ResearchResult, ModelOption, HistoryState, Attachment } from '@/types'
 import { MODEL_OPTIONS, DEFAULT_MODELS, DEFAULT_ORCHESTRATOR_PROMPT } from '@/config/models'
-import { useSettings, useVoiceRecorder, useBrowserHistory } from '@/hooks'
+import { useSettings, useVoiceRecorder, useBrowserHistory, useDeviceId } from '@/hooks'
 import { readFiles } from '@/lib/attachments'
 import {
   InputForm,
@@ -34,6 +35,12 @@ import { AuthButton } from '@/components/AuthButton'
 // ============================================================
 
 export default function Home() {
+  // ---- Analytics ----
+  const posthog = usePostHog()
+
+  // ---- Device ID (for anonymous usage tracking) ----
+  const { deviceId } = useDeviceId()
+
   // ---- Settings & Mode ----
   const { settings, saveSettings, isLoaded } = useSettings()
   const [byokMode, setByokMode] = useState(false)
@@ -240,6 +247,31 @@ export default function Home() {
   }, [])
 
   // ============================================================
+  // DRAFT PRESERVATION & BEFOREUNLOAD WARNING
+  // ============================================================
+
+  // Warn user before leaving if they have unsaved input
+  useEffect(() => {
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      // Only warn if there's meaningful content that could be lost
+      const hasQuery = queryRef.current.trim().length > 0
+      const hasFollowUp = followUpQueryRef.current.trim().length > 0
+      const hasAttachments = attachments.length > 0 || followUpAttachments.length > 0
+      const isInProgress = stage === 'research'
+
+      // Don't warn during research (they're waiting anyway) or on results page
+      if ((hasQuery || hasFollowUp || hasAttachments) && !isInProgress && stage !== 'results') {
+        e.preventDefault()
+        // Modern browsers ignore custom messages, but we need to set returnValue
+        e.returnValue = ''
+      }
+    }
+
+    window.addEventListener('beforeunload', handleBeforeUnload)
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload)
+  }, [attachments.length, followUpAttachments.length, stage])
+
+  // ============================================================
   // MODEL SELECTION
   // ============================================================
 
@@ -362,7 +394,10 @@ export default function Home() {
       // Use streaming endpoint for real-time progress
       const response = await fetch('/api/research/stream', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          ...(deviceId && { 'X-Device-ID': deviceId }),
+        },
         body: JSON.stringify({
           query: enhancedQuery,
           attachments: currentAttachments.length > 0 ? currentAttachments : undefined,
@@ -425,6 +460,15 @@ export default function Home() {
                 setStage('results')
                 pushState('results')
 
+                // Track research completion
+                posthog?.capture('research_completed', {
+                  is_follow_up: isFollowUp,
+                  model_count: selectedModels.length,
+                  total_cost: result.totalCost,
+                  success_count: result.responses.filter(r => !r.error).length,
+                  error_count: result.responses.filter(r => r.error).length,
+                })
+
                 // Clear form data on success
                 if (!isFollowUp) {
                   queryRef.current = ''
@@ -480,6 +524,15 @@ export default function Home() {
     // Use ref for current value (state may be stale due to useTransition)
     const currentQuery = queryRef.current || query
     if (!currentQuery.trim()) return
+
+    // Track research start
+    posthog?.capture('research_started', {
+      query_length: currentQuery.length,
+      model_count: selectedModels.length,
+      has_attachments: attachments.length > 0,
+      attachment_count: attachments.length,
+    })
+
     getClarifyingQuestions(currentQuery)
   }
 
@@ -507,6 +560,14 @@ export default function Home() {
     // Use ref for current value (state may be stale due to useTransition)
     const currentFollowUp = followUpQueryRef.current || followUpQuery
     if (!currentFollowUp.trim()) return
+
+    // Track follow-up
+    posthog?.capture('follow_up_submitted', {
+      query_length: currentFollowUp.length,
+      conversation_length: conversationHistory.length,
+      has_attachments: followUpAttachments.length > 0,
+    })
+
     runFullResearch(currentFollowUp, true)
   }
 
@@ -519,6 +580,11 @@ export default function Home() {
   }
 
   const downloadZip = async () => {
+    // Track download
+    posthog?.capture('download_started', {
+      conversation_length: conversationHistory.length,
+    })
+
     try {
       const response = await fetch('/api/download', {
         method: 'POST',
@@ -541,6 +607,11 @@ export default function Home() {
   }
 
   const startNew = () => {
+    // Track session reset
+    posthog?.capture('session_reset', {
+      conversation_length: conversationHistory.length,
+    })
+
     setStage('input')
     setConversationHistory([])
     queryRef.current = ''

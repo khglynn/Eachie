@@ -21,8 +21,22 @@ CREATE TABLE IF NOT EXISTS anonymous_usage (
   device_id VARCHAR(64) PRIMARY KEY,
   total_cost_cents INTEGER DEFAULT 0,
   first_seen TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-  last_seen TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+  last_seen TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  -- Rate limiting columns
+  requests_today INTEGER DEFAULT 0,
+  requests_this_hour INTEGER DEFAULT 0,
+  last_request_at TIMESTAMP WITH TIME ZONE,
+  hour_window_start TIMESTAMP WITH TIME ZONE,
+  day_window_start DATE
 );
+
+-- Migration: Add rate limiting columns if table exists without them
+-- Run these if upgrading an existing database:
+-- ALTER TABLE anonymous_usage ADD COLUMN IF NOT EXISTS requests_today INTEGER DEFAULT 0;
+-- ALTER TABLE anonymous_usage ADD COLUMN IF NOT EXISTS requests_this_hour INTEGER DEFAULT 0;
+-- ALTER TABLE anonymous_usage ADD COLUMN IF NOT EXISTS last_request_at TIMESTAMP WITH TIME ZONE;
+-- ALTER TABLE anonymous_usage ADD COLUMN IF NOT EXISTS hour_window_start TIMESTAMP WITH TIME ZONE;
+-- ALTER TABLE anonymous_usage ADD COLUMN IF NOT EXISTS day_window_start DATE;
 
 -- ============================================================
 -- USERS (Synced from Clerk via webhook)
@@ -91,4 +105,35 @@ CREATE TABLE IF NOT EXISTS invite_codes (
   redeemed_at TIMESTAMP WITH TIME ZONE,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   CONSTRAINT valid_credit_amount CHECK (credits_cents IN (1200, 2400, 3600))
+);
+
+-- ============================================================
+-- ABUSE FLAGS (System alerts and device blocks)
+-- ============================================================
+-- Tracks abuse events and system-wide alerts.
+-- flag_type: 'rate_limit', 'cost_spike', 'low_confidence', 'system_alert'
+
+CREATE TABLE IF NOT EXISTS abuse_flags (
+  id SERIAL PRIMARY KEY,
+  device_id VARCHAR(64),                      -- NULL for system-wide alerts
+  flag_type VARCHAR(32) NOT NULL,
+  details JSONB,                              -- Context about the flag
+  resolved BOOLEAN DEFAULT FALSE,
+  resolved_at TIMESTAMP WITH TIME ZONE,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_abuse_flags_device ON abuse_flags(device_id);
+CREATE INDEX IF NOT EXISTS idx_abuse_flags_type ON abuse_flags(flag_type);
+CREATE INDEX IF NOT EXISTS idx_abuse_flags_unresolved ON abuse_flags(resolved) WHERE resolved = FALSE;
+
+-- ============================================================
+-- SYSTEM STATE (Global settings and circuit breakers)
+-- ============================================================
+-- Key-value store for system state like "free_tier_paused".
+
+CREATE TABLE IF NOT EXISTS system_state (
+  key VARCHAR(64) PRIMARY KEY,
+  value JSONB NOT NULL,
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );

@@ -12,3 +12,6 @@
 export { useSettings } from './useSettings'
 export { useVoiceRecorder } from './useVoiceRecorder'
 export { useBrowserHistory } from './useBrowserHistory'
+export { useDeviceId } from './useDeviceId'
+export { useDraftPreservation } from './useDraftPreservation'
+export type { DraftState } from './useDraftPreservation'
