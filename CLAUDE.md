@@ -2,6 +2,19 @@
 
 *Inherits from ~/DevKev/CLAUDE.md*
 
+## Starting a Session?
+
+**Check `ROADMAP.md` first** - It shows what's completed and what's next in order:
+1. Settings Page
+2. Legal Compliance
+3. Chat History
+4. Analytics Schema
+5. Friend Codes
+
+Detailed implementation plans are in `claude-plans/`.
+
+---
+
 ## What This Is
 
 A multi-model research orchestrator. Queries multiple AI models in parallel, then synthesizes their responses into unified insights. BYOK mode lets friends use it with their own API keys.
@@ -59,7 +72,7 @@ Warm, clear, curious. Educational without being condescending. Eachie genuinely 
 | **PostHog** | Session tracking, analytics | Active |
 | **Sentry** | Error tracking | Active |
 | **Clerk** | Account management, auth | Planned |
-| **Stripe** | Payment processing, auto top-up | Planned |
+| **Stripe** | Payment processing, auto top-up | Active (backend ready) |
 | **Canny** | Feature requests | Active (eachie.canny.io) |
 
 ## Key Files
@@ -102,15 +115,27 @@ git checkout main && git merge dev && git push
 git checkout dev  # back to working
 ```
 
-## Legal & Compliance
+## Backend & Data Privacy
 
-Public-facing app with free tier that generates revenue. Based in Texas, distributed globally.
+This project stores user data. **When adding new data storage:**
+1. Check `~/DevKev/tools/helper/guides/app-compliance-privacy.md`
+2. Update privacy policy (`app/privacy/page.tsx`) if storing new user content
+3. Respect privacy tiers: Full (free/paid) → Analytics Only (BYOK) → Errors Only (opt-in)
 
-**Keep in mind:**
-- GDPR (European users) - cookie consent, data handling, right to deletion
-- Privacy policy and terms of service required
-- Payment disclosures (Stripe)
-- API key handling (BYOK mode stores keys in localStorage, not on server)
+### Privacy Tiers (Dec 2024)
+
+| Tier | Who | What's Stored |
+|------|-----|---------------|
+| **Full** | Free tier, Paid users | Queries, responses, analytics |
+| **Analytics Only** | BYOK users | Metadata only (no query text) |
+| **Errors Only** | Anyone who opts in | Just error tracking |
+
+### Legal Context
+
+Public-facing app with free tier. Based in Texas, distributed globally.
+- GDPR (European users) - right to deletion, data access
+- Privacy policy and terms at `/privacy` and `/terms`
+- API key handling (BYOK stores in localStorage, not server)
 
 ## Project-Specific Notes
 - OpenRouter is the gateway for all models
@@ -242,21 +267,24 @@ The chalk filter is defined in `app/layout.tsx`:
 
 Adjust values for more/less hand-drawn effect.
 
-## Code Review Status (Dec 2024)
+## Current Status (Dec 2024)
 
-Latest review: **Grade A (Excellent)**
+### Completed
+- ✅ Core app (multi-model research)
+- ✅ Code review & cleanup (Grade A)
+- ✅ Anonymous usage tracking ($12 free tier per device)
+- ✅ Rate limiting (20/hr, 100/day for free tier)
+- ✅ Clerk auth (users table, device linking)
+- ✅ Stripe backend (auto top-up flow, webhooks)
+- ✅ Database schema (users, sessions, usage)
 
-- Component organization: A
-- Design system consistency: A-
-- Type safety: A+
-- API layer: A (usage tracking, rate limiting added)
-- Documentation: A
+### Next Up
+See `ROADMAP.md` for the full ordered list. TL;DR:
+1. **Settings Page** - User settings UI
+2. **Legal Compliance** - Privacy policy updates, delete data feature
+3. **Chat History** - Server-side session storage for paid users
 
-**Implemented:**
-- Anonymous usage tracking ($12 free tier per device)
-- Rate limiting (20/hr, 100/day for free tier)
-- System-wide cost monitoring + circuit breaker
-- beforeunload warning for unsaved work
-
-**Ready for:** Auth (Clerk), payments (Stripe), chat history.
-See `claude-plans/` for implementation roadmaps.
+### Reference Files
+- `ROADMAP.md` - What's next (ordered)
+- `claude-plans/` - Detailed implementation plans
+- `ORCHESTRATION.md` - How research flow works
