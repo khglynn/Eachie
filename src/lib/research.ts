@@ -263,6 +263,18 @@ ${customPrompt}`
   const orchestratorName =
     ORCHESTRATOR_OPTIONS.find((o) => o.id === orchestratorId)?.name || orchestratorId
 
+  // Calculate orchestrator cost from its token usage
+  const orchestratorUsage = synthesisResult.usage
+    ? {
+        promptTokens: synthesisResult.usage.promptTokens || 0,
+        completionTokens: synthesisResult.usage.completionTokens || 0,
+      }
+    : undefined
+  const orchestratorCost = calculateCost(orchestratorId, orchestratorUsage)
+
+  // Total = all model costs + orchestrator cost
+  const modelsCost = responses.reduce((sum, r) => sum + (r.cost || 0), 0)
+
   return {
     query: request.query,
     responses,
@@ -270,7 +282,7 @@ ${customPrompt}`
     totalDurationMs: Date.now() - startTime,
     modelCount: models.length,
     successCount: successful.length,
-    totalCost: responses.reduce((sum, r) => sum + (r.cost || 0), 0),
+    totalCost: modelsCost + orchestratorCost,
     timestamp: new Date().toISOString(),
     orchestrator: orchestratorName,
   }

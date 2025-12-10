@@ -27,6 +27,7 @@ import {
   HelpModal,
 } from '@/components'
 import { ChalkSettings, ChalkError, ChalkWarning, ChalkQuestion, ChalkDownload, ChalkPlus } from '@/components/ChalkIcons'
+import { AuthButton } from '@/components/AuthButton'
 
 // ============================================================
 // MAIN COMPONENT
@@ -770,9 +771,12 @@ export default function Home() {
             <span className="mx-2">·</span>
             <a href="/privacy" className="hover:text-paper-accent">Privacy</a>
           </div>
-          <a href="https://eachie.canny.io/feature-requests" target="_blank" rel="noopener noreferrer" className="hover:text-paper-accent">
-            Request a Feature
-          </a>
+          <div className="flex items-center gap-4">
+            <AuthButton />
+            <a href="https://eachie.canny.io/feature-requests" target="_blank" rel="noopener noreferrer" className="hover:text-paper-accent">
+              Request a Feature
+            </a>
+          </div>
         </footer>
       </div>
     </main>

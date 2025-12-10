@@ -1,6 +1,6 @@
 # Eachie - Agent Instructions
 
-*Inherits from ~/DevKevin/CLAUDE.md*
+*Inherits from ~/DevKev/CLAUDE.md*
 
 ## What This Is
 
