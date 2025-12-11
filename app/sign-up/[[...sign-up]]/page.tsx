@@ -1,0 +1,29 @@
+/**
+ * Sign Up Page
+ *
+ * Uses Clerk's pre-built SignUp component.
+ * Styled to match Eachie's paper theme.
+ */
+
+import { SignUp } from '@clerk/nextjs'
+import Link from 'next/link'
+
+export default function SignUpPage() {
+  return (
+    <main className="min-h-screen bg-paper-bg flex flex-col items-center justify-center p-4">
+      <div className="mb-8">
+        <Link href="/" className="text-paper-accent hover:underline text-sm">
+          &larr; Back to Eachie
+        </Link>
+      </div>
+      <SignUp
+        appearance={{
+          elements: {
+            rootBox: 'mx-auto',
+            card: 'bg-paper-card border border-paper-accent/20',
+          },
+        }}
+      />
+    </main>
+  )
+}

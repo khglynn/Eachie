@@ -96,7 +96,7 @@ export function ClarifyingQuestions({
                 <ChalkLoading size={14} /> Working...
               </>
             ) : (
-              'Eachsearch'
+              'Research'
             )}
           </button>
         </div>

@@ -12,4 +12,13 @@ Sentry.init({
 
   // Adjust this value in production, or use tracesSampler for greater control
   tracesSampleRate: 1,
+
+  // Scrub request bodies to avoid storing user query content in error reports
+  // This ensures BYOK/privacy-mode users don't have their queries leaked to Sentry
+  beforeSend(event) {
+    if (event.request?.data) {
+      event.request.data = '[REDACTED]'
+    }
+    return event
+  },
 });

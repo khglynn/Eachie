@@ -66,12 +66,14 @@ export default function TermsPage() {
           <section>
             <h2 className="text-xl font-semibold text-paper-text">4. Data and Privacy</h2>
             <p>
-              Your queries are sent to third-party AI providers. We don&apos;t permanently store
-              your research content on our servers. See our{' '}
+              Your queries are sent to third-party AI providers. What we store depends on your
+              usage tier and privacy settings. Free tier users&apos; data is stored to improve our
+              service. BYOK users get enhanced privacy (no query text stored). All users can opt
+              into &quot;Errors Only&quot; mode for minimal tracking. See our{' '}
               <Link href="/privacy" className="text-paper-accent hover:underline">
                 Privacy Policy
               </Link>{' '}
-              for details on what data we collect.
+              for full details.
             </p>
           </section>
 

@@ -44,17 +44,36 @@ export default function PrivacyPage() {
             </ul>
 
             <h3 className="text-lg font-medium text-paper-text mt-4">Query Data</h3>
+            <p className="mb-2">
+              Your queries are sent to third-party AI providers (via OpenRouter) to generate
+              responses. What we store on our servers depends on how you use Eachie:
+            </p>
             <ul className="list-disc pl-5 space-y-2">
               <li>
-                <strong>Research queries:</strong> Your queries are sent to third-party AI providers
-                (via OpenRouter) to generate responses. We do not permanently store the content of
-                your queries or AI responses on our servers.
+                <strong>Free tier users:</strong> We store your queries, AI responses, and usage
+                analytics. We subsidize your usage, so we retain this data to improve our service.
+              </li>
+              <li>
+                <strong>Paid users (using our API credits):</strong> By default, we store your
+                queries and responses to provide chat history and sync across devices. You can opt
+                out in settings to store only anonymous analytics (no query text).
+              </li>
+              <li>
+                <strong>BYOK users (your own API key):</strong> We store only anonymous analytics
+                (query length, model usage, costs) but not the text of your queries or responses.
+                Your queries go directly to providers without being stored. To sync chat history,
+                upgrade to paid.
               </li>
               <li>
                 <strong>Attachments:</strong> Files you upload (images, PDFs, text) are processed
-                in-memory and sent to AI providers. They are not stored after your session.
+                in-memory and sent to AI providers. Attachment metadata (file types, counts) is
+                stored for analytics; file contents are not stored.
               </li>
             </ul>
+            <p className="mt-2 text-paper-muted text-sm">
+              All users can opt to &quot;Errors Only&quot; mode in settings, which disables all analytics
+              except error tracking needed to keep Eachie working.
+            </p>
 
             <h3 className="text-lg font-medium text-paper-text mt-4">API Keys (BYOK Mode)</h3>
             <p>
@@ -107,6 +126,32 @@ export default function PrivacyPage() {
                 </a>
                 .
               </li>
+              <li>
+                <strong>PostHog:</strong> Analytics and session recording (for users with full
+                tracking). See{' '}
+                <a
+                  href="https://posthog.com/privacy"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-paper-accent hover:underline"
+                >
+                  PostHog&apos;s privacy policy
+                </a>
+                .
+              </li>
+              <li>
+                <strong>Sentry:</strong> Error tracking to identify and fix bugs. Query content is
+                scrubbed from error reports. See{' '}
+                <a
+                  href="https://sentry.io/privacy/"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-paper-accent hover:underline"
+                >
+                  Sentry&apos;s privacy policy
+                </a>
+                .
+              </li>
             </ul>
           </section>
 
@@ -153,14 +198,19 @@ export default function PrivacyPage() {
             <h2 className="text-xl font-semibold text-paper-text">Data Retention</h2>
             <ul className="list-disc pl-5 space-y-2">
               <li>
-                <strong>Usage data:</strong> Retained while your account is active, or until you
-                request deletion.
+                <strong>Usage analytics:</strong> Aggregated monthly after 6 months. Detailed data
+                is available for recent queries; older data is summarized.
               </li>
               <li>
-                <strong>Query content:</strong> Not retained beyond your active session.
+                <strong>Query content (if stored):</strong> Retained according to your preference:
+                6 months (default), 1 year, 5 years, or forever. You can change this in settings.
               </li>
               <li>
                 <strong>Payment records:</strong> Retained as required by law (typically 7 years).
+              </li>
+              <li>
+                <strong>Account data:</strong> Retained until you delete your account. You can
+                request full data deletion at any time.
               </li>
             </ul>
           </section>

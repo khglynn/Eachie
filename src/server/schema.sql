@@ -50,6 +50,11 @@ CREATE TABLE IF NOT EXISTS users (
   credits_cents INTEGER DEFAULT 0,          -- Purchased credits balance
   total_spent_cents INTEGER DEFAULT 0,      -- Lifetime spend
   stripe_customer_id VARCHAR(64),
+  stripe_payment_method_id VARCHAR(64),     -- Saved card for auto top-up
+  -- Auto top-up settings
+  auto_topup_enabled BOOLEAN DEFAULT TRUE,  -- Whether to auto-charge when low
+  auto_topup_threshold_cents INTEGER DEFAULT 600,   -- Trigger when balance < $6
+  auto_topup_amount_cents INTEGER DEFAULT 2400,     -- Charge $24 by default
   redeemed_code VARCHAR(32),                -- One invite code per account
   device_id VARCHAR(64),                    -- Link to anonymous usage for migration
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
@@ -323,6 +328,12 @@ CREATE UNIQUE INDEX IF NOT EXISTS idx_model_calls_monthly_key ON model_calls_mon
 -- MIGRATIONS: Add analytics columns to existing tables
 -- ============================================================
 -- Run these if upgrading an existing database.
+
+-- Users: Add auto top-up columns (December 2024)
+-- ALTER TABLE users ADD COLUMN IF NOT EXISTS stripe_payment_method_id VARCHAR(64);
+-- ALTER TABLE users ADD COLUMN IF NOT EXISTS auto_topup_enabled BOOLEAN DEFAULT TRUE;
+-- ALTER TABLE users ADD COLUMN IF NOT EXISTS auto_topup_threshold_cents INTEGER DEFAULT 600;
+-- ALTER TABLE users ADD COLUMN IF NOT EXISTS auto_topup_amount_cents INTEGER DEFAULT 2400;
 
 -- Users: Add analytics tracking columns
 -- ALTER TABLE users ADD COLUMN IF NOT EXISTS first_query_at TIMESTAMP WITH TIME ZONE;

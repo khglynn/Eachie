@@ -8,6 +8,22 @@
  */
 
 // ============================================================
+// BUSINESS MODEL
+// Eachie charges a 1.5% margin on API costs for paid users.
+// BYOK users pay OpenRouter directly (no margin for us).
+// ============================================================
+
+export const EACHIE_MARGIN = 0.015 // 1.5%
+
+/**
+ * Calculate what we charge the user (raw cost + our margin).
+ * Use this for paid users only. BYOK users don't pay us.
+ */
+export function calculateUserCharge(rawCost: number): number {
+  return rawCost * (1 + EACHIE_MARGIN)
+}
+
+// ============================================================
 // PRICING DATA
 // Rates per million tokens (input/output) - Dec 2024
 // Update this single file when pricing changes.

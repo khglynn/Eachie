@@ -5,6 +5,7 @@
  *
  * Wraps app with ClerkProvider and PostHogProvider.
  * Syncs Clerk user to PostHog for user identification.
+ * Links device_id to user account for analytics continuity.
  *
  * Created: December 2024
  */
@@ -13,7 +14,8 @@ import { ClerkProvider, useUser } from '@clerk/nextjs'
 import { dark } from '@clerk/themes'
 import posthog from 'posthog-js'
 import { PostHogProvider } from 'posthog-js/react'
-import { useEffect } from 'react'
+import { useEffect, useRef } from 'react'
+import { useDeviceId } from '@/hooks/useDeviceId'
 
 interface ProvidersProps {
   children: React.ReactNode
@@ -62,11 +64,44 @@ function PostHogUserIdentifier() {
   return null
 }
 
+/**
+ * Links device_id to user account after sign-up.
+ * This enables retroactive querying of pre-signup activity.
+ * Only runs once per session to avoid unnecessary API calls.
+ */
+function DeviceLinker() {
+  const { user, isLoaded } = useUser()
+  const deviceId = useDeviceId()
+  const hasLinked = useRef(false)
+
+  useEffect(() => {
+    // Only run when user is loaded, logged in, and we have a device ID
+    if (!isLoaded || !user || !deviceId || hasLinked.current) return
+
+    // Mark as linked to prevent duplicate calls
+    hasLinked.current = true
+
+    // Call API to link device to user
+    fetch('/api/user/link-device', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ deviceId }),
+    }).catch((err) => {
+      console.warn('[DeviceLinker] Failed to link device:', err)
+      // Reset so it can retry next time
+      hasLinked.current = false
+    })
+  }, [user, isLoaded, deviceId])
+
+  return null
+}
+
 export function Providers({ children, clerkEnabled }: ProvidersProps) {
   // Wrap everything in PostHogProvider
   const content = (
     <PostHogProvider client={posthog}>
       {clerkEnabled && <PostHogUserIdentifier />}
+      {clerkEnabled && <DeviceLinker />}
       {children}
     </PostHogProvider>
   )

@@ -29,7 +29,7 @@ Because of this, we often go down rabbit holes on documentation and best practic
 
 When working on Eachie, consider:
 1. **Check `claude-plans/`** - Implementation roadmaps live here. Read them before starting related work.
-2. **Document decisions** - When we figure out a pattern (schema design, error handling, auth flow), capture it so future sessions don't re-derive it.
+2. **Document decisions** - When comparing options or choosing a path, use the `project-documentation` skill to capture the "why" in MuxDocs.
 3. **Flag learning moments** - If Kevin and Claude work through something tricky, suggest saving the approach to `~/.mux/src/HG-Skills-Public/hg-skills/` for reuse.
 4. **Analytics thinking** - For new features, ask: "What questions might we want to answer about this later?" Design data capture accordingly.
 

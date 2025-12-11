@@ -654,7 +654,8 @@ export default function Home() {
             <img
               src="/eachie-spider.png"
               alt=""
-              className="h-[14px] sm:h-[18px] w-auto object-contain ml-0.5 mb-1 sm:mb-1.5 opacity-80"
+              className="h-[12px] sm:h-[14px] w-auto object-contain ml-1 -mb-0.5 opacity-60 brightness-75 saturate-50"
+              style={{ filter: 'sepia(100%) hue-rotate(220deg) saturate(300%) brightness(70%)' }}
               loading="eager"
               aria-hidden="true"
             />

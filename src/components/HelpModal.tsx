@@ -125,7 +125,7 @@ export function HelpModal({ onClose, byokMode }: HelpModalProps) {
               Download
             </h3>
             <p>
-              Download eachsearch as a ZIP with markdown files - perfect for Obsidian or
+              Download research as a ZIP with markdown files - perfect for Obsidian or
               other note apps.
             </p>
           </section>

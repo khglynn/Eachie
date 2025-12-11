@@ -1,7 +1,7 @@
 # Plan 1: Stripe, Auth & Usage Tracking
 
 **Created:** December 2024
-**Status:** Part 1 Complete, Parts 2-3 Pending
+**Status:** ✅ COMPLETE (Dec 10, 2024)
 
 ---
 
@@ -12,8 +12,6 @@ Three-part implementation for monetization and user management.
 ---
 
 ## Part 1: Anonymous Usage Tracking ✅ COMPLETE
-
-All items committed to git on `dev` branch.
 
 | Item | Status | File |
 |------|--------|------|
@@ -27,60 +25,56 @@ All items committed to git on `dev` branch.
 | Draft preservation | ✅ Done | `src/hooks/useDraftPreservation.ts` |
 | beforeunload warning | ✅ Done | `app/page.tsx` |
 
-### How It Works
+---
 
-1. **Device Fingerprinting**: FingerprintJS generates stable `visitorId` per device
-2. **Usage Tracking**: `anonymous_usage` table tracks cost per device
-3. **Free Tier**: $12 (1200 cents) free usage per device
-4. **Rate Limiting**: 20 requests/hour, 100 requests/day
-5. **Circuit Breaker**: `system_state` table can pause free tier globally
+## Part 2: Clerk Authentication ✅ COMPLETE
+
+| Item | Status | File |
+|------|--------|------|
+| Install @clerk/nextjs | ✅ Done | package.json |
+| Add ClerkProvider | ✅ Done | app/providers.tsx |
+| Auth middleware | ✅ Done | middleware.ts |
+| Sign in/up pages | ✅ Done | app/sign-in/, app/sign-up/ |
+| User webhook sync | ✅ Done | app/api/webhooks/clerk/route.ts |
+| Link device to user | ✅ Done | app/api/user/link-device/route.ts |
+| AuthButton component | ✅ Done | src/components/AuthButton.tsx |
+| DeviceLinker component | ✅ Done | app/providers.tsx |
 
 ---
 
-## Part 2: Clerk Authentication ⏳ PENDING
+## Part 3: Stripe Payments ✅ COMPLETE
 
-| Item | Files |
-|------|-------|
-| Install @clerk/nextjs | package.json |
-| Add ClerkProvider | app/layout.tsx |
-| Auth middleware | middleware.ts |
-| Sign in/up flows | app/sign-in/, app/sign-up/ |
-| User webhook sync | app/api/webhooks/clerk/route.ts |
-| Link device to user on signup | src/server/queries/users.ts |
+| Item | Status | File |
+|------|--------|------|
+| Install stripe package | ✅ Done | package.json |
+| Stripe client wrapper | ✅ Done | src/lib/stripe.ts |
+| Credit packages config | ✅ Done | src/lib/stripe.ts |
+| Checkout API | ✅ Done | app/api/checkout/route.ts |
+| Stripe webhook | ✅ Done | app/api/webhooks/stripe/route.ts |
+| Balance API | ✅ Done | app/api/user/balance/route.ts |
+| Credit functions | ✅ Done | src/server/queries/users.ts |
+| BalanceDisplay component | ✅ Done | src/components/BalanceDisplay.tsx |
+| UpgradePrompt component | ✅ Done | src/components/UpgradePrompt.tsx |
 
-### Key Decisions
-- Use Clerk's hosted pages (faster to implement)
-- Webhook syncs user data to our `users` table
-- On signup, link `device_id` to migrate free tier usage
+### Credit Packages
 
----
+| Package | Pay | Get | Bonus |
+|---------|-----|-----|-------|
+| Starter | $10 | $12 | 20% |
+| Popular | $25 | $30 | 20% |
+| Power | $50 | $65 | 30% |
+| Pro | $100 | $150 | 50% |
 
-## Part 3: Stripe Payments ⏳ PENDING
+### Stripe Dashboard Setup Required
 
-| Item | Files |
-|------|-------|
-| Stripe checkout for credits | app/api/checkout/route.ts |
-| Webhook for payment events | app/api/webhooks/stripe/route.ts |
-| Auto top-up setting | src/server/queries/users.ts |
-| Credit balance display | src/components/BalanceDisplay.tsx |
-| Upgrade prompt on limit | src/components/UpgradePrompt.tsx |
-
-### Pricing Model
-- Credits purchased in dollar amounts ($5, $10, $25, $50)
-- Auto top-up option when balance < $2
-- No subscriptions (pay-as-you-go only)
+1. Create "Eachie Credits" product with 4 prices
+2. Add env vars to `.env.local`
+3. Configure webhook endpoint
 
 ---
 
-## Dependencies
+## Next Steps
 
-- **Part 2 depends on**: Part 1 (device tracking for migration)
-- **Part 3 depends on**: Part 2 (need user accounts for credits)
-
----
-
-## Related Plans
-
-- **Plan 2**: Chat History, Legal, Friend Codes (depends on this)
-- **Plan 3**: Storybook Component Library (independent)
-- **Analytics Schema**: Database redesign for better analytics (can run in parallel)
+With Plan 1 complete, proceed to:
+- **Plan 2**: Chat History, Legal Pages, Friend Codes
+- **Plan 3**: Storybook Component Library (future)
