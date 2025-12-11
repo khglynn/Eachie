@@ -24,18 +24,9 @@ const integrations = [
   }),
 ];
 
-// Add PostHog integration if both are configured
-// This links Sentry errors to PostHog session recordings
-if (process.env.NEXT_PUBLIC_POSTHOG_KEY && process.env.NEXT_PUBLIC_SENTRY_DSN) {
-  integrations.push(
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    new posthog.SentryIntegration(
-      posthog,
-      "khg-y1",           // Sentry org slug
-      4510511964225536    // Sentry project ID (from DSN)
-    ) as any
-  );
-}
+// NOTE: PostHog-Sentry integration disabled - posthog.SentryIntegration is incompatible with Sentry v10
+// To re-enable, need to use the new @posthog/sentry-integration package
+// See: https://posthog.com/docs/libraries/sentry
 
 Sentry.init({
   dsn: process.env.NEXT_PUBLIC_SENTRY_DSN,
@@ -53,4 +44,13 @@ Sentry.init({
   replaysOnErrorSampleRate: 1.0,
 
   integrations,
+
+  // Scrub request bodies to avoid storing user query content in error reports
+  // This ensures BYOK/privacy-mode users don't have their queries leaked to Sentry
+  beforeSend(event) {
+    if (event.request?.data) {
+      event.request.data = '[REDACTED]'
+    }
+    return event
+  },
 });
