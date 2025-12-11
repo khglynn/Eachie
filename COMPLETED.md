@@ -6,6 +6,17 @@ Work that's done. Newest at top.
 
 ## December 2024
 
+### Production Environment Setup
+**Completed:** Dec 11, 2024
+
+- ✅ Environment tagging for Sentry (production/preview/development)
+- ✅ Environment tagging for PostHog (`$environment` super property)
+- ✅ Clerk theme updated to purple palette
+- ✅ eachie.me domain added to Vercel (307 redirect → eachie.ai)
+- ⏳ eachie.me DNS pending (needs Cloudflare A record)
+
+---
+
 ### Stripe, Auth & Usage Tracking (Plan 1)
 **Completed:** Dec 10, 2024
 **Plan:** `claude-plans/2024-12-10-plan1-stripe-auth-usage.md`
