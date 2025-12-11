@@ -32,10 +32,10 @@ interface ProvidersProps {
 const clerkAppearance = {
   baseTheme: dark,
   variables: {
-    colorPrimary: '#91AAF2',
-    colorBackground: '#021373',
-    colorText: '#F2F2F2',
-    colorTextSecondary: '#8BA3E6',
+    colorPrimary: '#9F7AEA',      // paper-accent (muted violet)
+    colorBackground: '#1A0533',   // paper-card (rich purple)
+    colorText: '#F2F2F2',         // paper-text (cream)
+    colorTextSecondary: '#A78BFA', // paper-muted (soft purple)
   },
 }
 

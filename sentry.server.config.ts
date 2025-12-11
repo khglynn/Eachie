@@ -4,8 +4,12 @@
 
 import * as Sentry from "@sentry/nextjs";
 
+// Determine environment: preview for test.eachie.ai, production for main branch
+const environment = process.env.VERCEL_ENV || 'development'
+
 Sentry.init({
   dsn: process.env.NEXT_PUBLIC_SENTRY_DSN,
+  environment,
 
   // Setting this option to true will print useful information to the console while you're setting up Sentry.
   debug: false,

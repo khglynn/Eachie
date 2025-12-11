@@ -8,12 +8,21 @@ import posthog from "posthog-js";
 // Initialize PostHog first (needed for Sentry integration)
 // This runs before React, so we init here and the provider just wraps it
 if (typeof window !== "undefined" && process.env.NEXT_PUBLIC_POSTHOG_KEY) {
+  // Determine environment for PostHog
+  const host = window.location.hostname
+  let phEnvironment = 'development'
+  if (host === 'eachie.ai' || host === 'eachie.me' || host === 'www.eachie.ai') phEnvironment = 'production'
+  else if (host.includes('test.eachie')) phEnvironment = 'preview'
+
   posthog.init(process.env.NEXT_PUBLIC_POSTHOG_KEY, {
     api_host: process.env.NEXT_PUBLIC_POSTHOG_HOST || "https://us.i.posthog.com",
     person_profiles: "identified_only",
     capture_pageview: true,
     capture_pageleave: true,
   });
+
+  // Register environment as a super property
+  posthog.register({ $environment: phEnvironment })
 }
 
 // Build integrations array
@@ -28,8 +37,20 @@ const integrations = [
 // To re-enable, need to use the new @posthog/sentry-integration package
 // See: https://posthog.com/docs/libraries/sentry
 
+// Determine environment based on Vercel's env or hostname
+const getEnvironment = () => {
+  if (typeof window !== 'undefined') {
+    const host = window.location.hostname
+    if (host === 'eachie.ai' || host === 'eachie.me' || host === 'www.eachie.ai') return 'production'
+    if (host.includes('test.eachie')) return 'preview'
+    if (host === 'localhost') return 'development'
+  }
+  return process.env.VERCEL_ENV || 'development'
+}
+
 Sentry.init({
   dsn: process.env.NEXT_PUBLIC_SENTRY_DSN,
+  environment: getEnvironment(),
 
   // Setting this option to true will print useful information to the console while you're setting up Sentry.
   debug: false,
