@@ -40,8 +40,6 @@ const PLACEHOLDER_MESSAGES = [
   'What should we find on the web?',
   'What threads should we follow?',
   'What should we weave together?',
-  'What patterns are you looking for?',
-  'Where should we cast our net?',
   'What strands should we pull together?',
   "What's caught your curiosity?",
   'What insights should we catch?',
@@ -49,6 +47,8 @@ const PLACEHOLDER_MESSAGES = [
   'Where should we crawl today?',
   'What corners should we explore?',
   'How should we connect the dots?',
+  "What's catching the light today?",
+  "What ideas are flitting by?",
 ]
 
 interface InputFormProps {
