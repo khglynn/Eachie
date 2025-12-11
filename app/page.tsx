@@ -102,16 +102,19 @@ export default function Home() {
   // INITIALIZATION
   // ============================================================
 
-  // Check for BYOK mode and restore query from URL parameters
+  // Check for BYOK mode and restore query from URL or localStorage
   useEffect(() => {
     const params = new URLSearchParams(window.location.search)
     setByokMode(params.get('byok') === 'true')
 
-    // Restore query from URL if present (survives page refresh)
+    // Priority: URL param > localStorage draft
     const urlQuery = params.get('q')
-    if (urlQuery) {
-      queryRef.current = urlQuery
-      setQuery(urlQuery)
+    const savedDraft = localStorage.getItem('eachie_draft_query')
+
+    const queryToRestore = urlQuery || savedDraft
+    if (queryToRestore) {
+      queryRef.current = queryToRestore
+      setQuery(queryToRestore)
     }
   }, [])
 
@@ -244,29 +247,23 @@ export default function Home() {
   }, [])
 
   // ============================================================
-  // DRAFT PRESERVATION & BEFOREUNLOAD WARNING
+  // DRAFT PRESERVATION (localStorage)
   // ============================================================
 
-  // Warn user before leaving if they have unsaved input
+  // Save query to localStorage as user types (debounced via the setter)
   useEffect(() => {
-    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
-      // Only warn if there's meaningful content that could be lost
-      const hasQuery = queryRef.current.trim().length > 0
-      const hasFollowUp = followUpQueryRef.current.trim().length > 0
-      const hasAttachments = attachments.length > 0 || followUpAttachments.length > 0
-      const isInProgress = stage === 'research'
-
-      // Don't warn during research (they're waiting anyway) or on results page
-      if ((hasQuery || hasFollowUp || hasAttachments) && !isInProgress && stage !== 'results') {
-        e.preventDefault()
-        // Modern browsers ignore custom messages, but we need to set returnValue
-        e.returnValue = ''
-      }
+    // Don't save empty strings or during results (query is done)
+    if (query.trim() && stage === 'input') {
+      localStorage.setItem('eachie_draft_query', query)
     }
+  }, [query, stage])
 
-    window.addEventListener('beforeunload', handleBeforeUnload)
-    return () => window.removeEventListener('beforeunload', handleBeforeUnload)
-  }, [attachments.length, followUpAttachments.length, stage])
+  // Clear draft when research completes successfully
+  useEffect(() => {
+    if (stage === 'results') {
+      localStorage.removeItem('eachie_draft_query')
+    }
+  }, [stage])
 
   // ============================================================
   // MODEL SELECTION
