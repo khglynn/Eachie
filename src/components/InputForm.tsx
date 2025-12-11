@@ -47,7 +47,7 @@ const PLACEHOLDER_MESSAGES = [
   'Where should we crawl today?',
   'What corners should we explore?',
   'How should we connect the dots?',
-  "What's catching the light today?",
+  "What's glistening in your thoughts?",
   "What ideas are flitting by?",
 ]
 
