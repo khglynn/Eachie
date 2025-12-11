@@ -261,7 +261,7 @@ export const TRANSCRIPTION_SERVICE: TranscriptionService = {
 export const DEFAULT_MODELS = [
   'anthropic/claude-haiku-4.5:online',
   'google/gemini-2.5-flash:online',
-  'deepseek/deepseek-r1:online',
+  'x-ai/grok-4.1-fast',
 ]
 
 /**
