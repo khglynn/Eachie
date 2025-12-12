@@ -308,3 +308,34 @@ export interface HistoryState {
   /** Original query before clarifying (for back to input from clarifying) */
   originalQuery?: string
 }
+
+// ============================================================
+// USER SETTINGS TYPES (Server-side)
+// ============================================================
+
+/**
+ * User settings returned from /api/user/settings.
+ * Combines Clerk user info with database settings.
+ */
+export interface UserSettings {
+  /** User's email from Clerk */
+  email: string
+  /** User's display name (may be null) */
+  name: string | null
+  /** Account creation date */
+  createdAt: string
+  /** Credit balance in cents */
+  creditsCents: number
+  /** Total spent in cents */
+  totalSpentCents: number
+  /** Whether user has a Stripe customer ID */
+  hasStripeCustomer: boolean
+  /** Whether user has a saved payment method */
+  hasPaymentMethod: boolean
+  /** Auto top-up settings */
+  autoTopup: {
+    enabled: boolean
+    thresholdCents: number
+    amountCents: number
+  }
+}

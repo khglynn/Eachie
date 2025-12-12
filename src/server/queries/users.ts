@@ -316,3 +316,66 @@ export async function checkAutoTopup(userId: string): Promise<{
     customerId: user.stripe_customer_id,
   }
 }
+
+// ============================================================
+// SETTINGS PAGE HELPERS
+// ============================================================
+
+/**
+ * Get user settings for the settings page.
+ * Returns null if user doesn't exist yet.
+ */
+export async function getUserSettings(userId: string): Promise<{
+  creditsCents: number
+  totalSpentCents: number
+  hasStripeCustomer: boolean
+  hasPaymentMethod: boolean
+  autoTopup: {
+    enabled: boolean
+    thresholdCents: number
+    amountCents: number
+  }
+  createdAt: Date
+} | null> {
+  const sql = getDb()
+
+  const result = await sql`
+    SELECT
+      credits_cents,
+      total_spent_cents,
+      stripe_customer_id,
+      stripe_payment_method_id,
+      auto_topup_enabled,
+      auto_topup_threshold_cents,
+      auto_topup_amount_cents,
+      created_at
+    FROM users
+    WHERE id = ${userId}
+  ` as {
+    credits_cents: number
+    total_spent_cents: number
+    stripe_customer_id: string | null
+    stripe_payment_method_id: string | null
+    auto_topup_enabled: boolean
+    auto_topup_threshold_cents: number
+    auto_topup_amount_cents: number
+    created_at: Date
+  }[]
+
+  if (result.length === 0) return null
+
+  const user = result[0]
+
+  return {
+    creditsCents: user.credits_cents,
+    totalSpentCents: user.total_spent_cents,
+    hasStripeCustomer: user.stripe_customer_id !== null,
+    hasPaymentMethod: user.stripe_payment_method_id !== null,
+    autoTopup: {
+      enabled: user.auto_topup_enabled,
+      thresholdCents: user.auto_topup_threshold_cents,
+      amountCents: user.auto_topup_amount_cents,
+    },
+    createdAt: user.created_at,
+  }
+}

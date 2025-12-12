@@ -6,12 +6,11 @@
  * @module components
  *
  * @example
- * import { InputForm, ResultsView, SettingsModal } from '@/components'
+ * import { InputForm, ResultsView, HelpModal } from '@/components'
  */
 
 export { Pill } from './Pill'
 export { ModelAccordion } from './ModelAccordion'
-export { SettingsModal } from './SettingsModal'
 export { HelpModal } from './HelpModal'
 export { InputForm } from './InputForm'
 export { ClarifyingQuestions } from './ClarifyingQuestions'

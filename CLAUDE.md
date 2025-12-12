@@ -4,9 +4,12 @@
 
 ## Starting a Session?
 
-**→ Check `ROADMAP.md` first ←**
+Before diving into work:
 
-It has the ordered list of what to work on next. When something's done, move it to `COMPLETED.md`.
+1. **Git status** - What's uncommitted? Any pending work?
+2. **Sentry** - Any new errors? (Use Sentry MCP to check recent issues)
+3. **Vercel** - Deployment healthy? (Use Vercel MCP to check status)
+4. **ROADMAP.md** - What's the priority? Move completed items to `COMPLETED.md`
 
 ---
 
@@ -35,12 +38,25 @@ When working on Eachie, consider:
 
 ### Tool Responsibilities
 
-| Tool | Primary Purpose |
-|------|-----------------|
-| **Database** | Transactional data, costs, model usage, user accounts |
-| **PostHog** | In-app behavior, funnels, session replays, traffic sources (Web Analytics) |
-| **Stripe** | Revenue, subscriptions, payment analytics |
-| **Canny** | Feature requests, user feedback |
+| Tool | Primary Purpose | Access |
+|------|-----------------|--------|
+| **Database (Neon)** | Transactional data, costs, model usage, user accounts | [Console](https://console.neon.tech) or Neon MCP |
+| **PostHog** | In-app behavior, funnels, session replays, traffic sources | PostHog MCP |
+| **Stripe** | Revenue, subscriptions, payment analytics | Stripe MCP |
+| **Sentry** | Error tracking, debugging | Sentry MCP |
+| **Canny** | Feature requests, user feedback | [eachie.canny.io](https://eachie.canny.io) |
+
+### Usage/Spend Quick Queries (Neon)
+
+```sql
+-- All users with spend
+SELECT email, name, credits_cents, total_spent_cents FROM users ORDER BY total_spent_cents DESC;
+
+-- Total tokens by user
+SELECT u.email, SUM(mc.total_tokens) as tokens, SUM(mc.cost_cents) as cost_cents
+FROM model_calls mc JOIN research_queries rq ON mc.research_query_id = rq.id
+JOIN users u ON rq.user_id = u.id GROUP BY u.email ORDER BY cost_cents DESC;
+```
 
 ## The Vibe
 

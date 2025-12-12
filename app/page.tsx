@@ -24,9 +24,9 @@ import {
   ClarifyingQuestions,
   ResultsView,
   ResearchProgress,
-  SettingsModal,
   HelpModal,
 } from '@/components'
+import Link from 'next/link'
 import { ChalkSettings, ChalkError, ChalkWarning, ChalkQuestion, ChalkDownload, ChalkPlus } from '@/components/ChalkIcons'
 import { AuthButton } from '@/components/AuthButton'
 
@@ -44,7 +44,6 @@ export default function Home() {
   // ---- Settings & Mode ----
   const { settings, saveSettings, isLoaded } = useSettings()
   const [byokMode, setByokMode] = useState(false)
-  const [showSettings, setShowSettings] = useState(false)
   const [showHelp, setShowHelp] = useState(false)
 
   // ---- Core State ----
@@ -704,24 +703,16 @@ export default function Home() {
             >
               <ChalkQuestion size={20} />
             </button>
-            <button
-              onClick={() => setShowSettings(true)}
+            <Link
+              href={byokMode ? '/settings?byok=true' : '/settings'}
               className="p-2 text-paper-muted hover:text-paper-text rounded-lg hover:bg-paper-hover"
             >
               <ChalkSettings size={20} />
-            </button>
+            </Link>
           </div>
         </div>
 
         {/* ---- Modals ---- */}
-        {showSettings && (
-          <SettingsModal
-            settings={settings}
-            onSave={saveSettings}
-            onClose={() => setShowSettings(false)}
-            byokMode={byokMode}
-          />
-        )}
         {showHelp && (
           <HelpModal onClose={() => setShowHelp(false)} byokMode={byokMode} />
         )}
