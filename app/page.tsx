@@ -467,6 +467,7 @@ export default function Home() {
         for (const line of lines) {
           if (line.startsWith('event: ')) {
             eventType = line.slice(7)
+            console.log('[Eachie] SSE event:', eventType)
           } else if (line.startsWith('data: ') && eventType) {
             try {
               const data = JSON.parse(line.slice(6))
