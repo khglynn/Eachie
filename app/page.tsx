@@ -871,6 +871,23 @@ export default function Home() {
           </div>
         )}
 
+        {/* ---- Fallback: Results stage but no history (bug recovery) ---- */}
+        {stage === 'results' && conversationHistory.length === 0 && !isLoading && (
+          <div className="text-center py-12">
+            <p className="text-paper-muted mb-4">
+              Something went wrong — results didn&apos;t load properly.
+            </p>
+            <button
+              type="button"
+              onClick={startNew}
+              className="px-4 py-2 bg-paper-accent/20 hover:bg-paper-accent/30
+                text-paper-text rounded-lg transition-colors"
+            >
+              Start New Research
+            </button>
+          </div>
+        )}
+
         {/* ---- Footer ---- */}
         <Footer />
       </div>
