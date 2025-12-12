@@ -4,6 +4,13 @@ What's next, in order. When done, move to `COMPLETED.md`.
 
 ---
 
+## Bug Fix: Server Error Tracking
+**Doc:** `claude-plans/2024-12-11-bug-investigation-empty-results.md`
+
+Quick fix (~20 lines) - server needs to write to `error_message` column when synthesis fails. Column exists, just needs wiring up in `stream/route.ts`.
+
+---
+
 ## 1. Settings Page
 **Plan:** `claude-plans/2024-12-11-settings-page-foundation.md`
 
@@ -41,7 +48,31 @@ Must exist BEFORE we store user content (chat history).
 
 ---
 
-## 3. Chat History
+## 3. Friend Codes
+**Plan:** `claude-plans/2024-12-10-chat-history-legal-friends.md` (Part 3)
+
+Growth feature - both parties get $6 when code redeemed.
+
+**What:**
+- 6 invites per user max
+- Free tier balance carries over on signup
+- Referral UI in settings page
+
+**Files to create:**
+- `app/api/referral/code/route.ts`
+- `app/api/referral/redeem/route.ts`
+- `src/components/ReferralSection.tsx`
+- `src/components/RedeemCode.tsx`
+
+---
+
+## 4. Image Generation Mode
+
+Mode toggle: `text ↔ image`. Send prompt to multiple image models, compare results in grid.
+
+---
+
+## 5. Chat History
 **Plan:** `claude-plans/2024-12-10-chat-history-legal-friends.md` (Part 1)
 
 Server-side session storage for paid users. BYOK stays client-side only.
@@ -60,7 +91,20 @@ Server-side session storage for paid users. BYOK stays client-side only.
 
 ---
 
-## 4. Analytics Schema
+## 6. Model Customization
+**Plan:** `claude-plans/2024-12-12-model-customization.md`
+
+Let users add models, set defaults, browse model capabilities and pricing. Also publish enriched model table as free SEO/AEO resource at `/models`.
+
+
+---
+
+## 7. Storybook Component Library
+| `claude-plans/2024-12-10-storybook-component-library.md` |
+
+---
+
+## 8. Analytics Schema
 **Plan:** `claude-plans/2024-12-10-analytics-schema.md`
 
 Better data for insights and decision-making.
@@ -78,54 +122,15 @@ Better data for insights and decision-making.
 
 ---
 
-## 5. Friend Codes
-**Plan:** `claude-plans/2024-12-10-chat-history-legal-friends.md` (Part 3)
-
-Growth feature - both parties get $6 when code redeemed.
-
-**What:**
-- 6 invites per user max
-- Free tier balance carries over on signup
-- Referral UI in settings page
-
-**Files to create:**
-- `app/api/referral/code/route.ts`
-- `app/api/referral/redeem/route.ts`
-- `src/components/ReferralSection.tsx`
-- `src/components/RedeemCode.tsx`
-
----
-
-## 6. Model Customization
-**Plan:** `claude-plans/2024-12-12-model-customization.md`
-
-Let users add models, set defaults, browse model capabilities and pricing. Also publish enriched model table as free SEO/AEO resource at `/models`.
-
----
-
-## 7. Image Generation Mode
-
-Mode toggle: `text ↔ image`. Send prompt to multiple image models, compare results in grid.
-
----
-
-## 8. Model Packs
+## 9. Model Packs
 
 Curated model + prompt combos for use cases: Go Wide, Go Deep, Creative, Technical, Fast.
 
 ---
 
-## 9. API / MCP
+## 10. API / MCP
 
 REST API and MCP server for programmatic/agent access to multi-model research.
-
----
-
-## Future
-
-| Feature | Plan |
-|---------|------|
-| Storybook Component Library | `claude-plans/2024-12-10-storybook-component-library.md` |
 
 ---
 
