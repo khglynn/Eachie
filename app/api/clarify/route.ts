@@ -19,7 +19,13 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ questions: [] }) // Skip clarifying in BYOK without key
     }
 
-    const openrouter = createOpenRouter({ apiKey: key })
+    const openrouter = createOpenRouter({
+      apiKey: key,
+      headers: {
+        'HTTP-Referer': 'https://eachie.ai',
+        'X-Title': 'Eachie',
+      },
+    })
 
     const result = await generateText({
       model: openrouter('anthropic/claude-haiku-4.5'),

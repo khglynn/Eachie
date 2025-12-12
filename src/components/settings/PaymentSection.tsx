@@ -177,6 +177,11 @@ export function PaymentSection({
           </div>
         </div>
 
+        {/* Cost Estimation Disclosure */}
+        <p className="text-xs text-paper-muted mt-4">
+          Costs marked with ~ are estimates when exact data isn't available from model providers.
+        </p>
+
         {/* Upgrade CTA */}
         <div className="pt-4 border-t border-paper-divider">
           <h4 className="text-sm font-medium text-paper-text mb-2">
@@ -365,6 +370,11 @@ export function PaymentSection({
           </p>
         )}
       </div>
+
+      {/* Cost Estimation Disclosure */}
+      <p className="text-xs text-paper-muted border-t border-paper-divider pt-4">
+        Costs marked with ~ are estimates when exact data isn't available from model providers.
+      </p>
     </div>
   )
 }

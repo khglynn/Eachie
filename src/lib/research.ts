@@ -89,7 +89,13 @@ export async function runResearch(request: ResearchRequest): Promise<ResearchRes
     throw new Error('API key required. Please add your OpenRouter key in Settings.')
   }
 
-  const openrouter = createOpenRouter({ apiKey })
+  const openrouter = createOpenRouter({
+    apiKey,
+    headers: {
+      'HTTP-Referer': 'https://eachie.ai',
+      'X-Title': 'Eachie',
+    },
+  })
   const orchestratorId = request.orchestratorId || DEFAULT_ORCHESTRATOR
   const attachments = request.attachments || []
 

@@ -215,6 +215,8 @@ export interface ModelResponse {
   }
   /** Calculated cost in USD */
   cost?: number
+  /** True when cost is estimated (text-length based), not from API */
+  isEstimatedCost?: boolean
 }
 
 /**
@@ -236,6 +238,8 @@ export interface ResearchResult {
   successCount: number
   /** Total cost for this round */
   totalCost?: number
+  /** True if any cost in this round is estimated */
+  hasEstimatedCosts?: boolean
   /** ISO timestamp when completed */
   timestamp?: string
   /** Name of model that created synthesis */

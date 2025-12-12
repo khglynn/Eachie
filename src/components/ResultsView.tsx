@@ -103,8 +103,9 @@ export function ResultsView({ conversationHistory }: ResultsViewProps) {
     })
   }
 
-  // Calculate cumulative session cost
+  // Calculate cumulative session cost and check for estimates
   const cumulativeCost = conversationHistory.reduce((sum, r) => sum + (r.totalCost || 0), 0)
+  const hasAnyEstimatedCosts = conversationHistory.some(r => r.hasEstimatedCosts)
 
   return (
     <div className="space-y-4">
@@ -112,7 +113,12 @@ export function ResultsView({ conversationHistory }: ResultsViewProps) {
       {cumulativeCost > 0 && (
         <div className="bg-paper-surface/50 border border-paper-accent/30 rounded-lg px-4 py-2 text-sm">
           <span className="font-medium text-paper-muted">Session Cost: </span>
-          <span className="text-paper-text/80">${cumulativeCost.toFixed(4)}</span>
+          <span
+            className="text-paper-text/80"
+            title={hasAnyEstimatedCosts ? 'Includes estimated costs (actual data unavailable from some models)' : undefined}
+          >
+            {hasAnyEstimatedCosts ? '~' : ''}${cumulativeCost.toFixed(4)}
+          </span>
         </div>
       )}
 
@@ -148,7 +154,12 @@ export function ResultsView({ conversationHistory }: ResultsViewProps) {
                 Summary
               </h3>
               {result.totalCost !== undefined && result.totalCost > 0 && (
-                <span className="text-xs text-paper-success">${result.totalCost.toFixed(4)}</span>
+                <span
+                  className="text-xs text-paper-success"
+                  title={result.hasEstimatedCosts ? 'Includes estimated costs' : undefined}
+                >
+                  {result.hasEstimatedCosts ? '~' : ''}${result.totalCost.toFixed(4)}
+                </span>
               )}
             </div>
             <div className="prose prose-sm prose-invert max-w-none text-paper-text/90">
@@ -196,8 +207,11 @@ export function ResultsView({ conversationHistory }: ResultsViewProps) {
                           </span>
                         )}
                         {response.cost !== undefined && response.cost > 0 && (
-                          <span className="text-xs text-paper-success">
-                            ${response.cost.toFixed(4)}
+                          <span
+                            className="text-xs text-paper-success"
+                            title={response.isEstimatedCost ? 'Estimated - actual cost data unavailable' : undefined}
+                          >
+                            {response.isEstimatedCost ? '~' : ''}${response.cost.toFixed(4)}
                           </span>
                         )}
                       </div>

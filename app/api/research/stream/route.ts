@@ -19,7 +19,7 @@ import {
   DEFAULT_ORCHESTRATOR,
   DEFAULT_ORCHESTRATOR_PROMPT,
 } from '@/config/models'
-import { calculateCost } from '@/lib/pricing'
+import { calculateCost, fetchGenerationStats, estimateCostFromText } from '@/lib/pricing'
 import { checkUsageAllowed, addAnonymousUsage } from '@/server/queries/usage'
 import {
   createResearchQuery,
@@ -125,7 +125,13 @@ export async function POST(request: NextRequest) {
           return
         }
 
-        const openrouter = createOpenRouter({ apiKey: key })
+        const openrouter = createOpenRouter({
+          apiKey: key,
+          headers: {
+            'HTTP-Referer': 'https://eachie.ai',
+            'X-Title': 'Eachie',
+          },
+        })
         const synthesizerModelId = orchestratorId || DEFAULT_ORCHESTRATOR
 
         // Parse attachments
@@ -253,7 +259,39 @@ export async function POST(request: NextRequest) {
                 : undefined
 
               const durationMs = Date.now() - modelStart
-              const cost = calculateCost(model.id, usage)
+
+              // === COST HIERARCHY ===
+              // 1. Try OpenRouter Generation API for actual cost
+              // 2. Fall back to token-based calculation
+              // 3. Fall back to text-length estimation (with ~flag)
+              let cost = 0
+              let isEstimatedCost = false
+              const generationId = result.response?.id
+
+              // Level 1: Query OpenRouter's Generation API for actual cost
+              if (generationId && key) {
+                const stats = await fetchGenerationStats(generationId, key)
+                if (stats?.total_cost && stats.total_cost > 0) {
+                  cost = stats.total_cost
+                }
+              }
+
+              // Level 2: Calculate from token counts
+              if (cost === 0 && usage && (usage.promptTokens > 0 || usage.completionTokens > 0)) {
+                cost = calculateCost(model.id, usage)
+              }
+
+              // Level 3: Estimate from text length (last resort)
+              if (cost === 0 && result.text) {
+                const inputText = buildMessages(model)
+                  .map(m => typeof m.content === 'string' ? m.content : '')
+                  .join('\n')
+                const estimate = estimateCostFromText(model.id, inputText, result.text)
+                if (estimate) {
+                  cost = estimate.cost
+                  isEstimatedCost = true
+                }
+              }
 
               const response: ModelResponse = {
                 model: model.name,
@@ -263,6 +301,7 @@ export async function POST(request: NextRequest) {
                 durationMs,
                 usage,
                 cost,
+                isEstimatedCost: isEstimatedCost || undefined,
               }
 
               responses.push(response)
@@ -392,19 +431,46 @@ ${customPrompt}`
         const orchestratorName =
           ORCHESTRATOR_OPTIONS.find((o) => o.id === synthesizerModelId)?.name || synthesizerModelId
 
-        // Calculate orchestrator cost from its token usage
+        // Calculate orchestrator cost using the same hierarchy
         const orchestratorUsage = synthesisResult.usage
           ? {
               promptTokens: synthesisResult.usage.promptTokens || 0,
               completionTokens: synthesisResult.usage.completionTokens || 0,
             }
           : undefined
-        const orchestratorCost = calculateCost(synthesizerModelId, orchestratorUsage)
+
+        let orchestratorCost = 0
+        let orchestratorCostEstimated = false
+        const orchestratorGenId = synthesisResult.response?.id
+
+        // Level 1: Try OpenRouter's Generation API
+        if (orchestratorGenId && key) {
+          const stats = await fetchGenerationStats(orchestratorGenId, key)
+          if (stats?.total_cost && stats.total_cost > 0) {
+            orchestratorCost = stats.total_cost
+          }
+        }
+
+        // Level 2: Calculate from token counts
+        if (orchestratorCost === 0 && orchestratorUsage && (orchestratorUsage.promptTokens > 0 || orchestratorUsage.completionTokens > 0)) {
+          orchestratorCost = calculateCost(synthesizerModelId, orchestratorUsage)
+        }
+
+        // Level 3: Estimate from text length
+        if (orchestratorCost === 0 && synthesisResult.text) {
+          const estimate = estimateCostFromText(synthesizerModelId, synthesisPrompt, synthesisResult.text)
+          if (estimate) {
+            orchestratorCost = estimate.cost
+            orchestratorCostEstimated = true
+          }
+        }
 
         // Total = all model costs + orchestrator cost
         const modelsCost = responses.reduce((sum, r) => sum + (r.cost || 0), 0)
-
         const totalCost = modelsCost + orchestratorCost
+
+        // Check if any costs were estimated
+        const hasEstimatedCosts = orchestratorCostEstimated || responses.some(r => r.isEstimatedCost)
 
         const result: ResearchResult = {
           query,
@@ -414,6 +480,7 @@ ${customPrompt}`
           modelCount: models.length,
           successCount: successful.length,
           totalCost,
+          hasEstimatedCosts: hasEstimatedCosts || undefined,
           timestamp: new Date().toISOString(),
           orchestrator: orchestratorName,
         }

@@ -61,6 +61,11 @@ export default function TermsPage() {
               credits. Credits are non-refundable except as required by law. We may change pricing
               with notice.
             </p>
+            <p className="mt-3">
+              <strong>Cost Estimates:</strong> When exact usage data is unavailable from model
+              providers, we estimate costs based on average token usage. Estimated costs are marked
+              with a ~ prefix in the interface. Actual charges may vary slightly from estimates.
+            </p>
           </section>
 
           <section>
