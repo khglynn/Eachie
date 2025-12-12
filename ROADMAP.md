@@ -96,6 +96,31 @@ Growth feature - both parties get $6 when code redeemed.
 
 ---
 
+## 6. Model Customization
+**Plan:** `claude-plans/2024-12-12-model-customization.md`
+
+Let users add models, set defaults, browse model capabilities and pricing. Also publish enriched model table as free SEO/AEO resource at `/models`.
+
+---
+
+## 7. Image Generation Mode
+
+Mode toggle: `text ↔ image`. Send prompt to multiple image models, compare results in grid.
+
+---
+
+## 8. Model Packs
+
+Curated model + prompt combos for use cases: Go Wide, Go Deep, Creative, Technical, Fast.
+
+---
+
+## 9. API / MCP
+
+REST API and MCP server for programmatic/agent access to multi-model research.
+
+---
+
 ## Future
 
 | Feature | Plan |

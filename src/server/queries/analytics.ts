@@ -364,6 +364,193 @@ export async function getAverageCostPerQuery(days: number = 30): Promise<{
   }
 }
 
+// ============================================================
+// TRIMMED MEAN QUERY COST
+// ============================================================
+
+export interface GlobalQueryStats {
+  trimmedMeanCents: number
+  queriesPerDollar: number
+  queriesFor8Dollars: number
+  totalQueries: number
+  queriesUsed: number
+  calculatedAt: string
+}
+
+/**
+ * Calculate trimmed mean query cost (clips top/bottom 15%).
+ * More robust than simple average - ignores outliers.
+ *
+ * @param days Number of days of data to include (default 90)
+ * @returns Trimmed mean stats or null if not enough data
+ */
+export async function calculateTrimmedMeanQueryCost(
+  days: number = 90
+): Promise<GlobalQueryStats | null> {
+  const sql = getDb()
+
+  // Fetch all costs from recent queries
+  const costs = await sql`
+    SELECT total_cost_cents as cost
+    FROM research_queries
+    WHERE created_at >= NOW() - INTERVAL '1 day' * ${days}
+      AND total_cost_cents IS NOT NULL
+      AND total_cost_cents > 0
+    ORDER BY total_cost_cents
+  ` as Array<{ cost: number }>
+
+  const totalQueries = costs.length
+
+  // Need at least 20 queries for meaningful trimmed mean
+  if (totalQueries < 20) {
+    return null
+  }
+
+  // Calculate trim amount (15% from each end)
+  const trimPercent = 0.15
+  const trimCount = Math.floor(totalQueries * trimPercent)
+
+  // Get the middle 70%
+  const trimmedCosts = costs.slice(trimCount, totalQueries - trimCount)
+  const queriesUsed = trimmedCosts.length
+
+  // Calculate average of trimmed data
+  const sum = trimmedCosts.reduce((acc, row) => acc + row.cost, 0)
+  const trimmedMeanCents = Math.round(sum / queriesUsed)
+
+  const now = new Date().toISOString()
+
+  return {
+    trimmedMeanCents,
+    queriesPerDollar: trimmedMeanCents > 0 ? Math.round((100 / trimmedMeanCents) * 100) / 100 : 0,
+    queriesFor8Dollars: trimmedMeanCents > 0 ? Math.floor(800 / trimmedMeanCents) : 0,
+    totalQueries,
+    queriesUsed,
+    calculatedAt: now,
+  }
+}
+
+// ============================================================
+// CACHED STATS (Database-backed cache)
+// ============================================================
+
+const GLOBAL_STATS_KEY = 'global_avg_query_cost'
+const CACHE_TTL_HOURS = 6
+
+/**
+ * Get global query stats from cache, or calculate fresh if expired/missing.
+ */
+export async function getCachedGlobalStats(): Promise<GlobalQueryStats | null> {
+  const sql = getDb()
+
+  // Check cache
+  const cached = await sql`
+    SELECT value, expires_at
+    FROM cached_stats
+    WHERE key = ${GLOBAL_STATS_KEY}
+      AND expires_at > NOW()
+    LIMIT 1
+  ` as Array<{ value: GlobalQueryStats; expires_at: Date }>
+
+  if (cached.length > 0) {
+    return cached[0].value
+  }
+
+  // Cache miss or expired - recalculate
+  const fresh = await calculateTrimmedMeanQueryCost()
+
+  if (fresh) {
+    await setCachedStats(GLOBAL_STATS_KEY, fresh, CACHE_TTL_HOURS)
+  }
+
+  return fresh
+}
+
+/**
+ * Force refresh global stats cache.
+ */
+export async function refreshGlobalStats(): Promise<GlobalQueryStats | null> {
+  const fresh = await calculateTrimmedMeanQueryCost()
+
+  if (fresh) {
+    await setCachedStats(GLOBAL_STATS_KEY, fresh, CACHE_TTL_HOURS)
+  }
+
+  return fresh
+}
+
+/**
+ * Set a cached stat value with TTL.
+ */
+async function setCachedStats(
+  key: string,
+  value: object,
+  ttlHours: number
+): Promise<void> {
+  const sql = getDb()
+
+  await sql`
+    INSERT INTO cached_stats (key, value, calculated_at, expires_at)
+    VALUES (
+      ${key},
+      ${JSON.stringify(value)},
+      NOW(),
+      NOW() + INTERVAL '1 hour' * ${ttlHours}
+    )
+    ON CONFLICT (key) DO UPDATE SET
+      value = EXCLUDED.value,
+      calculated_at = EXCLUDED.calculated_at,
+      expires_at = EXCLUDED.expires_at
+  `
+}
+
+// ============================================================
+// PER-USER QUERY STATS
+// ============================================================
+
+export interface UserQueryStats {
+  avgQueryCostCents: number
+  totalQueries: number
+  totalSpentCents: number
+}
+
+/**
+ * Get query stats for a specific user.
+ * Returns null if user has fewer than 10 queries.
+ *
+ * @param userId The user's ID
+ * @returns User's query stats or null if not enough data
+ */
+export async function getUserQueryStats(
+  userId: string
+): Promise<UserQueryStats | null> {
+  const sql = getDb()
+
+  const result = await sql`
+    SELECT
+      COUNT(*) as total_queries,
+      COALESCE(AVG(total_cost_cents), 0) as avg_cost,
+      COALESCE(SUM(total_cost_cents), 0) as total_spent
+    FROM research_queries
+    WHERE user_id = ${userId}
+      AND total_cost_cents IS NOT NULL
+      AND total_cost_cents > 0
+  ` as Array<{ total_queries: number; avg_cost: number; total_spent: number }>
+
+  const totalQueries = Number(result[0]?.total_queries ?? 0)
+
+  // Need at least 10 queries to show per-user stats
+  if (totalQueries < 10) {
+    return null
+  }
+
+  return {
+    avgQueryCostCents: Math.round(result[0]?.avg_cost ?? 0),
+    totalQueries,
+    totalSpentCents: Math.round(result[0]?.total_spent ?? 0),
+  }
+}
+
 interface PopularModelResult {
   model_id: string
   model_name: string

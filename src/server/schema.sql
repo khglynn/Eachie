@@ -252,6 +252,22 @@ CREATE INDEX IF NOT EXISTS idx_model_calls_provider ON model_calls(provider);
 CREATE INDEX IF NOT EXISTS idx_model_calls_created ON model_calls(created_at);
 
 -- ============================================================
+-- CACHED_STATS (Computed Statistics Cache)
+-- ============================================================
+-- Caches expensive computed statistics (like trimmed means).
+-- Keys: 'global_avg_query_cost', 'user_avg_query_cost:{userId}'
+-- Refresh: 6 hours for global stats, on-demand for user stats
+
+CREATE TABLE IF NOT EXISTS cached_stats (
+  key VARCHAR(64) PRIMARY KEY,
+  value JSONB NOT NULL,
+  calculated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  expires_at TIMESTAMP WITH TIME ZONE
+);
+
+CREATE INDEX IF NOT EXISTS idx_cached_stats_expires ON cached_stats(expires_at);
+
+-- ============================================================
 -- ANALYTICS: DIM_MODELS (Model Dimension)
 -- ============================================================
 -- Reference table for all available models.
