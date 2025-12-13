@@ -223,7 +223,7 @@ export function ReferralsSection() {
               disabled={isRefreshing}
               className="flex-1 px-3 py-2 text-sm bg-paper-accent text-paper-bg rounded-lg hover:bg-paper-accent/90 disabled:opacity-50"
             >
-              {isRefreshing ? 'Refreshing...' : 'Get New Emojis'}
+              {isRefreshing ? 'Rerolling...' : 'Reroll the runes'}
             </button>
           </div>
         </div>
