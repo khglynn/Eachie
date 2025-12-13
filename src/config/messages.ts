@@ -204,6 +204,31 @@ export const MESSAGES = {
     body: 'Your download has started.',
     type: 'toast' as MessageType,
   },
+
+  // ============================================================
+  // REFERRALS
+  // ============================================================
+
+  referralSuccess: {
+    id: 'referral_success',
+    title: 'You got $8!',
+    body: 'Your friend got $8 too. Welcome to Eachie!',
+    type: 'banner' as MessageType,
+  },
+
+  referralAlreadyUsed: {
+    id: 'referral_already_used',
+    title: 'Code already used',
+    body: "You've already used a friend code.",
+    type: 'toast' as MessageType,
+  },
+
+  referralInvalid: {
+    id: 'referral_invalid',
+    title: 'Invalid code',
+    body: "That friend code doesn't exist or has no uses left.",
+    type: 'toast' as MessageType,
+  },
 } as const
 
 /**

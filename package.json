@@ -6,7 +6,9 @@
     "dev": "next dev --turbo",
     "dev:webpack": "next dev",
     "dev:fresh": "rm -rf .next && next dev --turbo",
-    "build": "next build",
+    "prebuild": "lsof -ti:3000 | xargs kill 2>/dev/null || true",
+    "build": "next build --turbopack",
+    "build:webpack": "next build",
     "start": "next start",
     "lint": "next lint"
   },

@@ -9,7 +9,9 @@
 --   users            - Authenticated users (synced from Clerk)
 --   sessions         - Research sessions (conversations)
 --   conversation_rounds - Individual research queries within sessions
---   invite_codes     - Friend credit codes
+--   invite_codes     - Promo codes (fixed $12/$24/$36)
+--   referral_codes   - Friend codes (EACHIE-WITH-ME-XX🕷️🎯📚)
+--   referral_redemptions - Track friend code usage
 
 -- ============================================================
 -- ANONYMOUS USAGE (Pre-auth free tier)
@@ -99,9 +101,10 @@ CREATE TABLE IF NOT EXISTS conversation_rounds (
 CREATE INDEX IF NOT EXISTS idx_rounds_session ON conversation_rounds(session_id);
 
 -- ============================================================
--- INVITE CODES (Friend credits)
+-- INVITE CODES (Promo codes - Fixed amounts)
 -- ============================================================
 -- $12, $24, or $36 tiers. One code per account, max $72 total discount.
+-- NOTE: This is for PROMO codes. See referral_codes for friend codes.
 
 CREATE TABLE IF NOT EXISTS invite_codes (
   code VARCHAR(32) PRIMARY KEY,
@@ -111,6 +114,40 @@ CREATE TABLE IF NOT EXISTS invite_codes (
   redeemed_at TIMESTAMP WITH TIME ZONE,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   CONSTRAINT valid_credit_amount CHECK (credits_cents IN (1200, 2400, 3600))
+);
+
+-- ============================================================
+-- REFERRAL CODES (Friend codes - $8 each party)
+-- ============================================================
+-- Format: EACHIE-WITH-ME-{initials}{emoji}{emoji}{emoji}
+-- Example: EACHIE-WITH-ME-KG🕷️🎯📚
+-- Both parties get $8 (800 cents) when redeemed at signup.
+-- Each user gets 8 invites (base 8 for spider theme - 8 legs!).
+
+CREATE TABLE IF NOT EXISTS referral_codes (
+  code VARCHAR(64) PRIMARY KEY,           -- Includes emojis, needs length
+  user_id VARCHAR(64) NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  uses_remaining INTEGER DEFAULT 8,       -- 8 invites per user (base 8!)
+  total_uses INTEGER DEFAULT 0,           -- Track successful redemptions
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_referral_codes_user ON referral_codes(user_id);
+
+-- ============================================================
+-- REFERRAL REDEMPTIONS (Track friend code usage)
+-- ============================================================
+-- One redemption per user (UNIQUE constraint).
+-- Stores denormalized referrer_user_id for easy lookup even if code changes.
+
+CREATE TABLE IF NOT EXISTS referral_redemptions (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  code VARCHAR(64) NOT NULL REFERENCES referral_codes(code) ON DELETE CASCADE,
+  redeemed_by VARCHAR(64) NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  referrer_user_id VARCHAR(64) NOT NULL,  -- Denormalized for easy lookup
+  credits_cents INTEGER DEFAULT 800,       -- $8 each party
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  UNIQUE(redeemed_by)                      -- One redemption per user ever
 );
 
 -- ============================================================

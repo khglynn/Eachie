@@ -5,14 +5,15 @@ What's next, in order. When done, move to `COMPLETED.md`.
 ---
 
 ## 1. Friend Codes
-**Plan:** `claude-plans/2024-12-10-chat-history-legal-friends.md` (Part 3)
+**Plan:** `claude-plans/2024-12-12-friend-codes.md`
 
-Growth feature - both parties get $6 when code redeemed.
+Growth feature - both parties get $8 when code redeemed.
 
 **What:**
-- 6 invites per user max
+- 8 invites per user max (base 8!)
 - Free tier balance carries over on signup
 - Referral UI in settings page
+- Emoji-based codes: `EACHIE-WITH-ME-KG🕷️🎯📚`
 
 **Files to create:**
 - `app/api/referral/code/route.ts`

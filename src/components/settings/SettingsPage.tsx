@@ -200,13 +200,11 @@ export function SettingsPage() {
             />
           </SettingsSection>
 
-          {/* Referrals Section (static - instant) */}
+          {/* Referrals Section */}
           <SettingsSection
             title="Referrals"
             icon={<ChalkGift size={20} />}
             description="Invite friends and earn credits"
-            badge="Coming Soon"
-            badgeVariant="warning"
           >
             <ReferralsSection />
           </SettingsSection>

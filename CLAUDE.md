@@ -19,6 +19,8 @@ A multi-model research orchestrator. Queries multiple AI models in parallel, the
 
 **Character:** Eachie is a friendly academic spider, drawn with chalk. She casts a wide net - weaving together responses from across the web into something more useful than any single source.
 
+**Base 8 preference:** When choosing quantities, defaults, or limits - prefer 8 where it makes sense. Spiders have 8 legs! Examples: 8 friend invites, $8 referral credits, 8 default models. It's a fun thematic touch, not a hard rule.
+
 ## First Backend Project
 
 This is Kevin's first app built with Claude Code that has:
