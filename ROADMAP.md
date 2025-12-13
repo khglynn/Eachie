@@ -10,7 +10,20 @@ Mode toggle: `text ↔ image`. Send prompt to multiple image models, compare res
 
 ---
 
-## 2. Chat History
+## 2. Model Picker
+**Plan:** `claude-plans/2024-12-12-model-customization.md` (needs update)
+
+Robust model picker with sortable/filterable columns. Pull benchmark data from aggregators (Artificial Analysis, LMSYS, etc.) to show how models rank on different tasks, plus cost info.
+
+**What:**
+- Expandable model selector with data columns
+- Benchmark scores (coding, reasoning, creative, speed)
+- Cost per query estimates
+- Filter/sort by capability or price
+
+---
+
+## 3. Chat History
 **Plan:** `claude-plans/2024-12-10-chat-history-legal-friends.md` (Part 1)
 
 Server-side session storage for paid users. BYOK stays client-side only.
@@ -20,20 +33,6 @@ Server-side session storage for paid users. BYOK stays client-side only.
 - History sidebar/modal to load previous sessions
 - Session title generation from first query
 - Retention settings (6mo default, 5yr max)
-
-**Files to create:**
-- `app/api/sessions/route.ts`
-- `app/api/sessions/[id]/route.ts`
-- `src/components/ChatHistory.tsx`
-- `src/components/SessionCard.tsx`
-
----
-
-## 3. Model Customization
-**Plan:** `claude-plans/2024-12-12-model-customization.md`
-
-Let users add models, set defaults, browse model capabilities and pricing. Also publish enriched model table as free SEO/AEO resource at `/models`.
-
 
 ---
 
